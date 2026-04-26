@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galeria de Anúncios PWA</title>
+    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Meta tags para PWA (Funciona como App no Telemóvel) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+
+        /* Barra de progresso no topo */
+        #progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background-color: #ffffff;
+            width: 0%;
+            z-index: 50;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Ajuste para as imagens ocuparem todo o ecrã */
+        .ad-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Garante que a imagem preenche o ecrã sem distorcer */
+            filter: brightness(0.9);
+        }
+
+        /* Efeito de transição suave */
+        .fade-enter {
+            opacity: 0;
+        }
+        .fade-exit {
+            opacity: 0;
+            transition: opacity 800ms ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center select-none cursor-pointer">
+
+    <!-- Barra de Tempo -->
+    <div id="progress-bar"></div>
+
+    <!-- Ecrã de Carregamento -->
+    <div id="loader" class="text-white text-center z-50">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4 mx-auto"></div>
+        <p class="text-sm tracking-widest uppercase opacity-60">A carregar anúncios do GitHub...</p>
+    </div>
+
+    <!-- Contentor das Imagens -->
+    <div id="ad-container" class="hidden relative w-full h-full overflow-hidden">
+        <!-- As imagens serão inseridas aqui via JavaScript -->
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO REPOSITÓRIO
+        // ==========================================
+        const GITHUB_CONFIG = {
+            usuario: "SEU_USUARIO",      // Substitua pelo seu nome de utilizador no GitHub
+            repositorio: "SEU_REPO",     // Substitua pelo nome do seu repositório
+            pasta: "fotos",              // Nome da pasta onde estão as fotos (1.png, 2.png...)
+            totalFotos: 5,               // Quantidade total de fotos que você tem
+            intervalo: 5000              // 5 segundos entre cada troca
+        };
+
+        const baseUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.usuario}/${GITHUB_CONFIG.repositorio}/main/${GITHUB_CONFIG.pasta}/`;
+        
+        let ads = [];
+        let currentIndex = 0;
+        let timer = null;
+
+        const container = document.getElementById('ad-container');
+        const progressBar = document.getElementById('progress-bar');
+        const loader = document.getElementById('loader');
+
+        // Função para inicializar a lista de anúncios
+        function initGallery() {
+            // Criamos a lista baseada na quantidade definida
+            for (let i = 1; i <= GITHUB_CONFIG.totalFotos; i++) {
+                ads.push(`${baseUrl}${i}.png`);
+            }
+
+            // Baralhamos a lista para ser aleatória (Shuffle)
+            ads.sort(() => Math.random() - 0.5);
+
+            // Se tivermos anúncios, começamos
+            if (ads.length > 0) {
+                loader.classList.add('hidden');
+                container.classList.remove('hidden');
+                showNextAd();
+            }
+        }
+
+        // Função para mostrar o próximo anúncio
+        function showNextAd() {
+            const imageUrl = ads[currentIndex];
+            
+            // Criar o novo elemento de imagem
+            const nextImg = document.createElement('div');
+            nextImg.className = 'absolute inset-0 transition-opacity duration-1000 opacity-0';
+            nextImg.innerHTML = `<img src="${imageUrl}" class="ad-image" onerror="handleImageError(this)">`;
+            
+            // Remover a imagem anterior após a nova carregar
+            const oldImg = container.querySelector('.opacity-100');
+            if (oldImg) {
+                oldImg.classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => oldImg.remove(), 1000);
+            }
+
+            container.appendChild(nextImg);
+            
+            // Forçar reflow para a transição funcionar
+            setTimeout(() => nextImg.classList.replace('opacity-0', 'opacity-100'), 50);
+
+            // Reiniciar a barra de progresso
+            resetProgressBar();
+
+            // Preparar o próximo índice
+            currentIndex = (currentIndex + 1) % ads.length;
+
+            // Agendar a próxima troca
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(showNextAd, GITHUB_CONFIG.intervalo);
+        }
+
+        function resetProgressBar() {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+            setTimeout(() => {
+                progressBar.style.transition = `width ${GITHUB_CONFIG.intervalo}ms linear`;
+                progressBar.style.width = '100%';
+            }, 50);
+        }
+
+        // Caso uma imagem não exista ou falhe
+        function handleImageError(img) {
+            console.error("Erro ao carregar imagem:", img.src);
+            img.parentElement.innerHTML = `
+                <div class="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-10 text-center">
+                    <p class="text-xl font-bold mb-2">Erro ao carregar foto</p>
+                    <p class="text-xs opacity-50 font-mono">${img.src}</p>
+                </div>
+            `;
+        }
+
+        // Ativar modo ecrã inteiro (Full Screen) no primeiro clique
+        document.body.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log("Erro ao entrar em fullscreen:", err);
+                });
+            }
+        }, { once: true });
+
+        // Iniciar tudo quando o DOM estiver pronto
+        window.addEventListener('DOMContentLoaded', initGallery);
+
+        // Registro de Service Worker para PWA (offline básico)
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', function(event) {});`;
+            const blob = new Blob([swCode], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob));
+        }
+    </script>
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href='data:application/json,{"name":"Anúncios PWA","short_name":"Ads","start_url":".","display":"standalone","background_color":"#000000","theme_color":"#000000"}'>
+</body>
+</html>
