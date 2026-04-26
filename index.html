@@ -4,107 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Galeria de Anúncios PWA</title>
-    <!-- Tailwind CSS para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Meta tags para PWA (Funciona como App no Telemóvel) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
 
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; background-color: #000;
+            font-family: ui-sans-serif, system-ui, sans-serif;
         }
 
-        /* Barra de progresso no topo */
         #progress-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 4px;
-            background-color: #ffffff;
-            width: 0%;
-            z-index: 50;
+            position: absolute; top: 0; left: 0;
+            height: 4px; background-color: #ffffff;
+            width: 0%; z-index: 50;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
-        /* Ajuste para as imagens ocuparem todo o ecrã */
         .ad-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100%; height: 100%;
+            object-fit: contain; 
             filter: brightness(0.9);
-        }
-
-        .view {
-            transition: opacity 0.5s ease-in-out;
-            position: absolute;
-            inset: 0;
-        }
-
-        .hidden-view {
-            opacity: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .active-view {
-            opacity: 1;
-            pointer-events: auto;
-            z-index: 10;
+            background-color: #000;
         }
     </style>
 </head>
 <body class="flex items-center justify-center select-none cursor-pointer">
 
-    <!-- Barra de Tempo (Apenas para Galeria) -->
     <div id="progress-bar"></div>
 
-    <!-- Ecrã de Carregamento -->
     <div id="loader" class="text-white text-center z-50">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4 mx-auto"></div>
-        <p class="text-sm tracking-widest uppercase opacity-60">A carregar anúncios do GitHub...</p>
+        <p class="text-sm tracking-widest uppercase opacity-60">A carregar anúncios...</p>
     </div>
 
-    <!-- VISTA 1: GALERIA DE ANÚNCIOS -->
-    <div id="gallery-view" class="view active-view bg-black">
-        <div id="ad-container" class="relative w-full h-full overflow-hidden">
-            <!-- As imagens serão inseridas aqui via JavaScript -->
-        </div>
-    </div>
-
-    <!-- VISTA 2: PÁGINA DE COBRANÇA -->
-    <div id="payment-view" class="view hidden-view bg-zinc-900 flex flex-col items-center justify-center text-white p-6">
-        <div class="max-w-md w-full bg-black/40 p-8 rounded-3xl border border-white/10 text-center shadow-2xl">
-            <div class="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-            </div>
-            <h1 class="text-3xl font-bold mb-4">Página de Cobrança</h1>
-            <p class="text-zinc-400 mb-8 leading-relaxed">
-                Aguardando interação para processar o pagamento...
-            </p>
-            <div class="text-xs uppercase tracking-[0.2em] text-zinc-500 mb-2">Retorno automático em</div>
-            <div id="inactivity-countdown" class="text-4xl font-mono font-bold text-white">30</div>
-            
-            <button onclick="goToView('gallery')" class="mt-10 px-8 py-3 bg-white text-black rounded-full font-bold uppercase text-xs tracking-widest hover:bg-zinc-200 transition-colors">
-                Voltar Agora
-            </button>
-        </div>
+    <div id="ad-container" class="relative w-full h-full overflow-hidden flex items-center justify-center">
+        <!-- Imagens via JS -->
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO
-        // ==========================================
         const GITHUB_CONFIG = {
             usuario: "Lauriuche",
             repositorio: "anuncios",
@@ -113,97 +55,20 @@
             intervalo: 5000 
         };
 
-        const INACTIVITY_TIME = 30000; // Tempo de inatividade em milissegundos (30 segundos)
-
         const baseUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.usuario}/${GITHUB_CONFIG.repositorio}/main/${GITHUB_CONFIG.pasta}/`;
         
         let ads = [];
         let currentIndex = 0;
-        let galleryTimer = null;
-        let inactivityTimer = null;
-        let countdownInterval = null;
-        let currentView = 'gallery';
+        let timer = null;
 
         const container = document.getElementById('ad-container');
         const progressBar = document.getElementById('progress-bar');
         const loader = document.getElementById('loader');
-        const countdownEl = document.getElementById('inactivity-countdown');
 
-        // Navegação entre vistas
-        function goToView(viewName) {
-            currentView = viewName;
-            
-            if (viewName === 'gallery') {
-                document.getElementById('gallery-view').classList.replace('hidden-view', 'active-view');
-                document.getElementById('payment-view').classList.replace('active-view', 'hidden-view');
-                stopInactivityTimer();
-                startGallery();
-            } else {
-                document.getElementById('gallery-view').classList.replace('active-view', 'hidden-view');
-                document.getElementById('payment-view').classList.replace('hidden-view', 'active-view');
-                stopGallery();
-                startInactivityTimer();
-            }
-        }
-
-        // Gestão do Temporizador de Inatividade
-        function startInactivityTimer() {
-            resetInactivityTimer();
-            // Listeners para detetar atividade
-            window.addEventListener('mousemove', resetInactivityTimer);
-            window.addEventListener('mousedown', resetInactivityTimer);
-            window.addEventListener('keydown', resetInactivityTimer);
-            window.addEventListener('touchstart', resetInactivityTimer);
-        }
-
-        function stopInactivityTimer() {
-            if (inactivityTimer) clearTimeout(inactivityTimer);
-            if (countdownInterval) clearInterval(countdownInterval);
-            window.removeEventListener('mousemove', resetInactivityTimer);
-            window.removeEventListener('mousedown', resetInactivityTimer);
-            window.removeEventListener('keydown', resetInactivityTimer);
-            window.removeEventListener('touchstart', resetInactivityTimer);
-        }
-
-        function resetInactivityTimer() {
-            if (currentView !== 'payment') return;
-
-            if (inactivityTimer) clearTimeout(inactivityTimer);
-            if (countdownInterval) clearInterval(countdownInterval);
-
-            let timeLeft = INACTIVITY_TIME / 1000;
-            countdownEl.innerText = timeLeft;
-
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                countdownEl.innerText = timeLeft;
-                if (timeLeft <= 0) clearInterval(countdownInterval);
-            }, 1000);
-
-            inactivityTimer = setTimeout(() => {
-                goToView('gallery');
-            }, INACTIVITY_TIME);
-        }
-
-        // Gestão da Galeria
-        function startGallery() {
-            if (ads.length > 0) {
-                showNextAd();
-            }
-        }
-
-        function stopGallery() {
-            if (galleryTimer) clearTimeout(galleryTimer);
-            progressBar.style.transition = 'none';
-            progressBar.style.width = '0%';
-        }
-
-        // Atalho Enter
+        // LÓGICA DE REDIRECIONAMENTO AO PREMIR ENTER
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                if (currentView === 'gallery') {
-                    goToView('payment');
-                }
+                window.location.href = 'cobrança.html';
             }
         });
 
@@ -211,22 +76,17 @@
             for (let i = 1; i <= GITHUB_CONFIG.totalFotos; i++) {
                 ads.push(`${baseUrl}${i}.png`);
             }
-
             ads.sort(() => Math.random() - 0.5);
-
             if (ads.length > 0) {
                 loader.classList.add('hidden');
-                startGallery();
+                showNextAd();
             }
         }
 
         function showNextAd() {
-            if (currentView !== 'gallery') return;
-
             const imageUrl = ads[currentIndex];
-            
             const nextImg = document.createElement('div');
-            nextImg.className = 'absolute inset-0 transition-opacity duration-1000 opacity-0';
+            nextImg.className = 'absolute inset-0 transition-opacity duration-1000 opacity-0 flex items-center justify-center';
             nextImg.innerHTML = `<img src="${imageUrl}" class="ad-image" onerror="handleImageError(this)">`;
             
             const oldImg = container.querySelector('.opacity-100');
@@ -236,17 +96,12 @@
             }
 
             container.appendChild(nextImg);
-            
-            setTimeout(() => {
-                if(nextImg) nextImg.classList.replace('opacity-0', 'opacity-100');
-            }, 50);
+            setTimeout(() => { if(nextImg) nextImg.classList.replace('opacity-0', 'opacity-100'); }, 50);
 
             resetProgressBar();
-
             currentIndex = (currentIndex + 1) % ads.length;
-
-            if (galleryTimer) clearTimeout(galleryTimer);
-            galleryTimer = setTimeout(showNextAd, GITHUB_CONFIG.intervalo);
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(showNextAd, GITHUB_CONFIG.intervalo);
         }
 
         function resetProgressBar() {
@@ -259,24 +114,14 @@
         }
 
         function handleImageError(img) {
-            img.parentElement.innerHTML = `
-                <div class="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-10 text-center">
-                    <p class="text-xl font-bold mb-2">Erro ao carregar foto</p>
-                    <p class="text-xs opacity-50 font-mono break-all text-wrap">${img.src}</p>
-                </div>
-            `;
+            img.parentElement.innerHTML = `<div class="text-white text-xs opacity-30">Erro: ${img.src}</div>`;
         }
 
         document.body.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
         }, { once: true });
 
         window.addEventListener('DOMContentLoaded', initGallery);
     </script>
-
-    <!-- Manifest PWA -->
-    <link rel="manifest" href='data:application/json,{"name":"Anúncios PWA","short_name":"Ads","start_url":".","display":"standalone","background_color":"#000000","theme_color":"#000000"}'>
 </body>
 </html>
