@@ -42,15 +42,6 @@
             object-fit: cover; /* Garante que a imagem preenche o ecrã sem distorcer */
             filter: brightness(0.9);
         }
-
-        /* Efeito de transição suave */
-        .fade-enter {
-            opacity: 0;
-        }
-        .fade-exit {
-            opacity: 0;
-            transition: opacity 800ms ease-in-out;
-        }
     </style>
 </head>
 <body class="flex items-center justify-center select-none cursor-pointer">
@@ -81,7 +72,6 @@
             intervalo: 5000 
         };
 
-        // Nota: Para imagens no GitHub, o link raw geralmente é mais confiável se o GitHub Pages não estiver ativo
         const baseUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.usuario}/${GITHUB_CONFIG.repositorio}/main/${GITHUB_CONFIG.pasta}/`;
         
         let ads = [];
@@ -91,6 +81,14 @@
         const container = document.getElementById('ad-container');
         const progressBar = document.getElementById('progress-bar');
         const loader = document.getElementById('loader');
+
+        // Função para detetar a tecla Enter
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                // Redireciona para o ficheiro de cobrança na raiz
+                window.location.href = 'cobrança.html';
+            }
+        });
 
         function initGallery() {
             for (let i = 1; i <= GITHUB_CONFIG.totalFotos; i++) {
@@ -147,7 +145,6 @@
             img.parentElement.innerHTML = `
                 <div class="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-10 text-center">
                     <p class="text-xl font-bold mb-2">Erro ao carregar foto</p>
-                    <p class="text-sm opacity-50 mb-4">Verifique se o ficheiro existe no GitHub:</p>
                     <p class="text-xs opacity-50 font-mono break-all">${img.src}</p>
                 </div>
             `;
@@ -162,11 +159,6 @@
         }, { once: true });
 
         window.addEventListener('DOMContentLoaded', initGallery);
-
-        // Correção do Service Worker:
-        // Removido o registro via Blob que causava erro de protocolo.
-        // Para um PWA real, crie um arquivo chamado 'sw.js' no seu repositório GitHub
-        // e registre-o usando: navigator.serviceWorker.register('/anuncios/sw.js');
     </script>
 
     <!-- Manifest PWA -->
