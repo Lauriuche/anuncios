@@ -869,6 +869,59 @@
         lucide.createIcons();
         initFirebase();
     });
+        <script>
+        // CONFIGURAÇÃO DO TEMPO DE INATIVIDADE (30 segundos)
+        const SECONDS_TO_RETURN = 30;
+        let timeLeft = SECONDS_TO_RETURN;
+        let inactivityInterval = null;
+
+        const timerDisplay = document.getElementById('timer-display');
+
+        function startTimer() {
+            // Reinicia o contador
+            timeLeft = SECONDS_TO_RETURN;
+            updateDisplay();
+
+            // Limpa intervalos anteriores
+            if (inactivityInterval) clearInterval(inactivityInterval);
+
+            // Inicia nova contagem regressiva
+            inactivityInterval = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(inactivityInterval);
+                    window.location.href = 'index.html'; // RETORNO À GALERIA
+                }
+            }, 1000);
+        }
+
+        function updateDisplay() {
+            timerDisplay.innerText = timeLeft.toString().padStart(2, '0');
+            // Alerta visual quando o tempo está a acabar
+            if (timeLeft <= 5) {
+                timerDisplay.classList.add('text-red-500');
+            } else {
+                timerDisplay.classList.remove('text-red-500');
+            }
+        }
+
+        // FUNÇÃO PARA RESETAR O TEMPO EM QUALQUER INTERAÇÃO
+        function resetActivity() {
+            startTimer();
+        }
+
+        // DETETAR QUALQUER TIPO DE ATIVIDADE
+        window.addEventListener('mousemove', resetActivity);
+        window.addEventListener('mousedown', resetActivity);
+        window.addEventListener('keydown', resetActivity);
+        window.addEventListener('touchstart', resetActivity);
+        window.addEventListener('scroll', resetActivity);
+
+        // INICIAR AO CARREGAR A PÁGINA
+        window.onload = startTimer;
+    </script>
 </script>
 </body>
 </html>
