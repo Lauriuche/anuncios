@@ -71,16 +71,17 @@
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO DO REPOSITÓRIO
+        // CONFIGURAÇÃO DO REPOSITÓRIO ATUALIZADA
         // ==========================================
         const GITHUB_CONFIG = {
-            usuario: "SEU_USUARIO",      // Substitua pelo seu nome de utilizador no GitHub
-            repositorio: "SEU_REPO",     // Substitua pelo nome do seu repositório
-            pasta: "fotos",              // Nome da pasta onde estão as fotos (1.png, 2.png...)
-            totalFotos: 5,               // Quantidade total de fotos que você tem
-            intervalo: 5000              // 5 segundos entre cada troca
+            usuario: "Lauriuche",
+            repositorio: "anuncios",
+            pasta: "fotos",
+            totalFotos: 5,
+            intervalo: 5000 
         };
 
+        // Nota: Para imagens no GitHub, o link raw geralmente é mais confiável se o GitHub Pages não estiver ativo
         const baseUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.usuario}/${GITHUB_CONFIG.repositorio}/main/${GITHUB_CONFIG.pasta}/`;
         
         let ads = [];
@@ -91,17 +92,13 @@
         const progressBar = document.getElementById('progress-bar');
         const loader = document.getElementById('loader');
 
-        // Função para inicializar a lista de anúncios
         function initGallery() {
-            // Criamos a lista baseada na quantidade definida
             for (let i = 1; i <= GITHUB_CONFIG.totalFotos; i++) {
                 ads.push(`${baseUrl}${i}.png`);
             }
 
-            // Baralhamos a lista para ser aleatória (Shuffle)
             ads.sort(() => Math.random() - 0.5);
 
-            // Se tivermos anúncios, começamos
             if (ads.length > 0) {
                 loader.classList.add('hidden');
                 container.classList.remove('hidden');
@@ -109,16 +106,13 @@
             }
         }
 
-        // Função para mostrar o próximo anúncio
         function showNextAd() {
             const imageUrl = ads[currentIndex];
             
-            // Criar o novo elemento de imagem
             const nextImg = document.createElement('div');
             nextImg.className = 'absolute inset-0 transition-opacity duration-1000 opacity-0';
             nextImg.innerHTML = `<img src="${imageUrl}" class="ad-image" onerror="handleImageError(this)">`;
             
-            // Remover a imagem anterior após a nova carregar
             const oldImg = container.querySelector('.opacity-100');
             if (oldImg) {
                 oldImg.classList.replace('opacity-100', 'opacity-0');
@@ -127,16 +121,14 @@
 
             container.appendChild(nextImg);
             
-            // Forçar reflow para a transição funcionar
-            setTimeout(() => nextImg.classList.replace('opacity-0', 'opacity-100'), 50);
+            setTimeout(() => {
+                if(nextImg) nextImg.classList.replace('opacity-0', 'opacity-100');
+            }, 50);
 
-            // Reiniciar a barra de progresso
             resetProgressBar();
 
-            // Preparar o próximo índice
             currentIndex = (currentIndex + 1) % ads.length;
 
-            // Agendar a próxima troca
             if (timer) clearTimeout(timer);
             timer = setTimeout(showNextAd, GITHUB_CONFIG.intervalo);
         }
@@ -150,35 +142,31 @@
             }, 50);
         }
 
-        // Caso uma imagem não exista ou falhe
         function handleImageError(img) {
             console.error("Erro ao carregar imagem:", img.src);
             img.parentElement.innerHTML = `
                 <div class="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-10 text-center">
                     <p class="text-xl font-bold mb-2">Erro ao carregar foto</p>
-                    <p class="text-xs opacity-50 font-mono">${img.src}</p>
+                    <p class="text-sm opacity-50 mb-4">Verifique se o ficheiro existe no GitHub:</p>
+                    <p class="text-xs opacity-50 font-mono break-all">${img.src}</p>
                 </div>
             `;
         }
 
-        // Ativar modo ecrã inteiro (Full Screen) no primeiro clique
         document.body.addEventListener('click', () => {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
-                    console.log("Erro ao entrar em fullscreen:", err);
+                    console.log("Fullscreen indisponível");
                 });
             }
         }, { once: true });
 
-        // Iniciar tudo quando o DOM estiver pronto
         window.addEventListener('DOMContentLoaded', initGallery);
 
-        // Registro de Service Worker para PWA (offline básico)
-        if ('serviceWorker' in navigator) {
-            const swCode = `self.addEventListener('fetch', function(event) {});`;
-            const blob = new Blob([swCode], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob));
-        }
+        // Correção do Service Worker:
+        // Removido o registro via Blob que causava erro de protocolo.
+        // Para um PWA real, crie um arquivo chamado 'sw.js' no seu repositório GitHub
+        // e registre-o usando: navigator.serviceWorker.register('/anuncios/sw.js');
     </script>
 
     <!-- Manifest PWA -->
