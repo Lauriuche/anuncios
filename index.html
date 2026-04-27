@@ -1,288 +1,702 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Galeria de Anúncios Cloud</title>
+    <title>DOOH Manager Pro - Mídia Indoor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
-    <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0f172a">
 
     <style>
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            overflow: hidden; background-color: #000;
-            font-family: ui-sans-serif, system-ui, sans-serif;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        
+        /* Player da Galeria */
+        #progress-bar { position: absolute; top: 0; left: 0; height: 6px; background: #3b82f6; width: 0%; z-index: 100; transition: width linear; box-shadow: 0 2px 15px rgba(59, 130, 246, 0.8); }
+        .ad-slide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 800ms cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; }
+        .ad-slide.active { opacity: 1; z-index: 20; }
+        .ad-media { width: 100%; height: 100%; object-fit: contain; }
 
-        #progress-bar {
-            position: absolute; top: 0; left: 0;
-            height: 4px; background-color: #ffffff;
-            width: 0%; z-index: 50;
-        }
+        /* TOPO: Letreiro de Texto */
+        #header-bar { height: 65px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; z-index: 50; position: relative; backdrop-filter: blur(10px); }
+        #ticker-area { flex-grow: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
+        .ticker-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: tickerAnim 25s linear infinite; font-size: 28px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 2px; }
+        @keyframes tickerAnim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        .ad-image {
-            width: 100%; height: 100%;
-            object-fit: contain; 
-            background-color: #000;
-        }
+        /* BASE: Clima e Hora (Sem bug de espaçamento) */
+        #footer-bar { height: 80px; background: rgba(10, 10, 10, 0.95); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; z-index: 50; position: relative; backdrop-filter: blur(10px); }
+        
+        #weather-area { color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 900; letter-spacing: 1px; border-right: 2px solid rgba(255,255,255,0.15); width: 220px; text-align: center; }
+        /* tabular-nums e largura fixa impedem a hora de tremer */
+        #clock-area { color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 2px; cursor: pointer; transition: color 0.2s; user-select: none; width: 220px; text-align: center; }
+        #clock-area:active { color: #38bdf8; }
 
-        #admin-panel {
-            display: none;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.98);
-        }
+        /* QR Code Moderno */
+        .qr-overlay { position: absolute; bottom: 30px; right: 30px; z-index: 80; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); padding: 16px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.5); }
+        .qr-overlay span { color: #0f172a; font-size: 14px; font-weight: 900; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
 
-        .fade-transition {
-            transition: opacity 1s ease-in-out;
+        /* Estilos do Admin Premium */
+        #admin-panel { display: none; position: fixed; inset: 0; z-index: 500; background: linear-gradient(145deg, #0f172a, #020617); overflow-y: auto; }
+        .glass-card { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); backdrop-filter: blur(12px); }
+        .input-premium { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; font-size: 15px; color: white; outline: none; transition: all 0.3s ease; }
+        .input-premium:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); background: rgba(15, 23, 42, 0.9); }
+        
+        .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
+        .status-active { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-scheduled { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .status-expired { background: rgba(225, 29, 72, 0.15); color: #fb7185; border: 1px solid rgba(225, 29, 72, 0.3); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
+        /* Relatório de Impressão */
+        @media print {
+            body * { visibility: hidden; }
+            #report-area, #report-area * { visibility: visible; }
+            #report-area { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
         }
     </style>
 </head>
-<body class="flex items-center justify-center select-none">
+<body class="flex flex-col">
 
-    <div id="progress-bar"></div>
-
-    <!-- Botão de Configuração -->
-    <button id="admin-toggle-btn" class="absolute top-4 right-4 z-[60] p-4 text-white/10 hover:text-white transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-    </button>
-
-    <!-- Painel Admin -->
-    <div id="admin-panel" class="absolute inset-0 p-8 flex flex-col text-white overflow-y-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-black uppercase tracking-tighter">Gestão de Anúncios</h2>
-            <button id="admin-close-btn" class="bg-white/10 p-2 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
+    <!-- TOPO: L-Bar Letreiro -->
+    <div id="header-bar">
+        <div id="ticker-area">
+            <div class="ticker-text" id="ticker-text">Bem-vindo ao DOOH Manager Pro!</div>
         </div>
-        
-        <!-- Secção de Upload Direto -->
-        <div class="bg-white/5 p-6 rounded-3xl border border-white/10 mb-6">
-            <h3 class="text-xs font-black uppercase tracking-widest mb-4 text-zinc-400">Upload de Imagem</h3>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <input type="file" id="image-file" accept="image/*" class="flex-grow text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-white file:text-black hover:file:bg-zinc-200">
-                <button id="upload-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-black py-2 px-6 rounded-full text-xs uppercase tracking-widest transition-all">
-                    Enviar Ficheiro
-                </button>
+    </div>
+
+    <!-- MEIO: Player -->
+    <div id="main-gallery" class="flex-grow relative bg-black overflow-hidden">
+        <div id="progress-bar"></div>
+        <div id="status-display" class="absolute inset-0 flex flex-col items-center justify-center text-center z-50 bg-[#020617]">
+            <div class="animate-spin h-14 w-14 border-4 border-blue-500 border-t-transparent rounded-full mb-6"></div>
+            <span id="loader-text" class="text-sm font-bold uppercase tracking-[0.2em] text-blue-400">A Iniciar Sistema...</span>
+        </div>
+    </div>
+
+    <!-- BASE: Clima e Relógio -->
+    <div id="footer-bar">
+        <div id="weather-area" title="Clima em Tempo Real">--°C</div>
+        <!-- BOTÃO SECRETO: CLICAR NO RELÓGIO -->
+        <div id="clock-area" title="Acesso Reservado">00:00</div>
+    </div>
+
+    <!-- Painel Admin Master -->
+    <div id="admin-panel">
+        <div class="w-full max-w-screen-2xl mx-auto p-6 md:p-10">
+            
+            <!-- Header do Painel -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 pb-6 border-b border-slate-700/50 gap-6">
+                <div>
+                    <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">DOOH Enterprise</h2>
+                    <p class="text-sm text-slate-400 uppercase tracking-[0.2em] mt-2 font-bold">Gestão Avançada de Mídia Indoor</p>
+                </div>
+                <div class="flex gap-4 w-full sm:w-auto">
+                    <button onclick="generateReport()" class="flex-grow sm:flex-grow-0 px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        Relatório B2B
+                    </button>
+                    <button id="close-admin" class="flex-grow sm:flex-grow-0 px-6 py-4 bg-slate-800/80 hover:bg-slate-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-600 shadow-xl flex items-center justify-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        Fechar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Layout Dividido -->
+            <div class="flex flex-col lg:flex-row gap-10">
+                
+                <!-- Coluna Esquerda: Formulário -->
+                <div class="w-full lg:w-1/3 flex-shrink-0">
+                    <div class="glass-card p-6 md:p-8 lg:sticky lg:top-10">
+                        <h3 id="form-title" class="text-xl font-black text-white uppercase tracking-wider flex items-center mb-8">
+                            <span class="w-4 h-4 bg-blue-500 rounded-full mr-3 shadow-[0_0_15px_rgba(59,130,246,0.6)]"></span>Novo Contrato
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">1. Arquivo de Mídia</label>
+                                <input type="file" id="file-input" accept="image/*, video/*, .mp4, .mov, .webm" class="w-full text-sm text-slate-300 file:bg-blue-600 file:text-white file:border-0 file:rounded-xl file:px-5 file:py-3 file:mr-4 file:cursor-pointer file:font-black file:uppercase file:tracking-wide hover:file:bg-blue-500 input-premium p-2 cursor-pointer">
+                                <p id="edit-file-hint" class="text-xs text-amber-400 hidden mt-3 font-bold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">Edição: Deixe vazio para manter a mídia atual.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">2. Nome do Anunciante</label>
+                                <input type="text" id="client-name" placeholder="Ex: Padaria Central" class="input-premium w-full">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">3. Data Início</label>
+                                    <input type="date" id="start-date" class="input-premium w-full px-4" required>
+                                </div>
+                                <div>
+                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">4. Data Fim</label>
+                                    <input type="date" id="end-date" class="input-premium w-full px-4" required>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                                <div class="col-span-2 text-[10px] uppercase font-black text-blue-400 tracking-widest mb-1">Agendamento por Hora (Opcional)</div>
+                                <div>
+                                    <label class="text-xs uppercase font-black text-slate-400 mb-2 block">Hora Início</label>
+                                    <input type="time" id="start-time" value="00:00" class="input-premium w-full px-4 !py-3">
+                                </div>
+                                <div>
+                                    <label class="text-xs uppercase font-black text-slate-400 mb-2 block">Hora Fim</label>
+                                    <input type="time" id="end-time" value="23:59" class="input-premium w-full px-4 !py-3">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Tempo Ecrã (Seg)</label>
+                                    <input type="number" id="ad-duration" value="10" min="1" class="input-premium w-full text-center text-xl font-black">
+                                </div>
+                                <div>
+                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">QR Code (Opcional)</label>
+                                    <input type="text" id="qr-link" placeholder="wa.me/..." class="input-premium w-full">
+                                </div>
+                            </div>
+
+                            <div class="pt-4 space-y-3">
+                                <button id="upload-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-5 rounded-2xl uppercase text-sm tracking-[0.1em] shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95">Ativar Contrato</button>
+                                <button id="cancel-edit-btn" class="hidden w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-widest transition-all border border-slate-600">Cancelar Edição</button>
+                            </div>
+                            <p id="upload-msg" class="text-center text-sm font-bold text-emerald-400 h-6 uppercase tracking-widest"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Lista e Configurações -->
+                <div class="w-full lg:w-2/3 flex flex-col gap-8">
+                    
+                    <!-- Configurações Globais -->
+                    <div class="glass-card p-6 md:p-8">
+                        <h3 class="text-lg font-black text-white uppercase tracking-widest flex items-center mb-6"><span class="w-3 h-3 bg-purple-500 rounded-full mr-3 shadow-[0_0_15px_rgba(168,85,247,0.6)]"></span>Definições Globais do Ecrã</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Letreiro de Notícias (Topo)</label>
+                                <input type="text" id="ticker-input" placeholder="Novidades, promoções, recados..." class="input-premium w-full">
+                            </div>
+                            <div>
+                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Sua Cidade (Clima)</label>
+                                <input type="text" id="city-input" placeholder="Ex: São Paulo" class="input-premium w-full">
+                            </div>
+                            <div>
+                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Animação</label>
+                                <select id="trans-select" class="input-premium w-full cursor-pointer">
+                                    <option value="fade">Dissolver</option>
+                                    <option value="slide">Deslizar</option>
+                                    <option value="zoom">Zoom</option>
+                                    <option value="flip">Revista 3D</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button id="save-settings-btn" class="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white px-10 py-4 rounded-xl text-sm font-black uppercase tracking-widest shadow-[0_8px_15px_rgba(147,51,234,0.3)] transition-all">Salvar Configurações</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4">
+                        <h3 class="text-xl font-black text-slate-200 uppercase tracking-widest">Painel de Clientes Ativos <span id="total-ads-badge" class="ml-3 bg-blue-500/20 text-blue-400 py-1 px-3 rounded-lg text-sm">0</span></h3>
+                    </div>
+
+                    <!-- Lista de Campanhas -->
+                    <div id="campaigns-list" class="space-y-5 pb-20">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
             </div>
         </div>
-
-        <p class="text-zinc-500 text-sm mb-2 font-medium uppercase tracking-widest">Links Atuais (URLs)</p>
-        <textarea id="links-input" class="flex-grow min-h-[200px] bg-zinc-900 border border-white/10 rounded-3xl p-6 text-sm font-mono focus:border-white/30 outline-none transition-all" placeholder="Podes colar links externos aqui também..."></textarea>
-        
-        <div class="mt-6 flex gap-4">
-            <button id="save-btn" class="flex-grow bg-white text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs hover:bg-zinc-200 disabled:opacity-50">
-                Guardar Configurações
-            </button>
-        </div>
-        <p id="status-msg" class="text-center mt-4 text-xs font-bold uppercase tracking-widest text-zinc-600"></p>
     </div>
 
-    <!-- Container da Galeria -->
-    <div id="ad-container" class="relative w-full h-full flex items-center justify-center overflow-hidden">
-        <div id="loader" class="text-white/20 uppercase tracking-[0.3em] text-[10px] font-bold text-center px-4">
-            A ligar ao Supabase...
-        </div>
-    </div>
+    <!-- Área de Relatório (Oculta, só aparece na impressão) -->
+    <div id="report-area" style="display: none;"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SB_URL = 'https://xhznfkqwqzzqbigrlvux.supabase.co'; 
+        const SB_KEY = 'sb_publishable_mlr7SYljs0_TVrD58PBnwQ_SP0jSQOt';
+        const client = supabase.createClient(SB_URL, SB_KEY);
 
-    <script type="module">
-        const SUPABASE_URL = 'https://xhznfkqwqzzqbigrlvux.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_mlr7SYljs0_TVrD58PBnwQ_SP0jSQOt';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let ads = []; 
+        let validAds = []; 
+        let extras = { ticker: "", city: "Lisboa" };
+        let curIndex = 0;
+        let loop = null;
+        let syncMetricsLoop = null;
+        let weatherLoop = null;
+        let editingIndex = -1;
 
-        let ads = [];
-        let currentIndex = 0;
-        let timer = null;
-        let pollingInterval = null;
-        const INTERVALO_TRANSICAO = 5000;
-        const INTERVALO_POLLING = 20000; 
+        const gallery = document.getElementById('main-gallery');
+        const loaderText = document.getElementById('loader-text');
+        const statusDisplay = document.getElementById('status-display');
+        const adminPanel = document.getElementById('admin-panel');
+        const campaignsList = document.getElementById('campaigns-list');
 
-        async function fetchAds() {
+        const getTodayString = () => new Date().toISOString().split('T')[0];
+        const getNextMonthString = () => { let d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; };
+
+        document.getElementById('start-date').value = getTodayString();
+        document.getElementById('end-date').value = getNextMonthString();
+
+        setInterval(() => {
+            document.getElementById('clock-area').innerText = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
+
+        async function fetchWeather() {
             try {
-                const { data, error } = await supabase
-                    .from('configuracoes')
-                    .select('links')
-                    .eq('id', 1)
-                    .single();
+                if (!extras.city || extras.city.trim() === "") return;
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(extras.city)}&count=1&language=pt`);
+                const geoData = await geoRes.json();
+                
+                if (geoData.results && geoData.results.length > 0) {
+                    const lat = geoData.results[0].latitude;
+                    const lon = geoData.results[0].longitude;
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                    const weatherData = await weatherRes.json();
+                    
+                    const temp = Math.round(weatherData.current_weather.temperature);
+                    const code = weatherData.current_weather.weathercode;
+                    
+                    let icon = '☁️';
+                    if (code === 0 || code === 1) icon = '☀️';
+                    else if (code === 2 || code === 3) icon = '⛅';
+                    else if (code >= 51 && code <= 67) icon = '🌧️';
+                    else if (code >= 71 && code <= 82) icon = '🌨️';
+                    else if (code >= 95) icon = '🌩️';
 
+                    document.getElementById('weather-area').innerText = `${icon} ${temp}°C`;
+                } else {
+                    document.getElementById('weather-area').innerText = '☀️ --°C';
+                }
+            } catch (e) {
+                console.log("Erro ao buscar clima:", e);
+            }
+        }
+
+        async function start() {
+            try {
+                loaderText.innerText = "Sincronizando Banco de Dados...";
+                const { data, error } = await client.from('configuracoes').select('*').eq('id', 1).maybeSingle();
                 if (error) throw error;
 
-                if (data && data.links) {
-                    const novosLinks = Array.isArray(data.links) ? data.links : JSON.parse(data.links || "[]");
-                    if (JSON.stringify(novosLinks) !== JSON.stringify(ads)) {
-                        updateAdsList(novosLinks);
+                if (data) {
+                    let rawLinks = Array.isArray(data.links) ? data.links : [];
+                    ads = rawLinks.map((ad, index) => {
+                        if (typeof ad === 'string') {
+                            const isVid = !!ad.match(/\.(mp4|webm|mov|mkv)$/i);
+                            return { id: 'legacy_'+index, url: ad, type: isVid ? 'video' : 'image', duration: 10, client: "Anunciante Inicial", impressions: 0, startDate: getTodayString(), endDate: '2099-12-31', startTime: '00:00', endTime: '23:59' }; 
+                        }
+                        if (typeof ad === 'object' && !ad.id) ad.id = 'gen_' + Date.now() + '_' + index;
+                        if (!ad.startTime) ad.startTime = '00:00';
+                        if (!ad.endTime) ad.endTime = '23:59';
+                        return ad;
+                    });
+
+                    extras = data.config_extras || { ticker: "Espaço Publicitário Disponível", city: "Lisboa" };
+                    trans = data.transicao || 'fade';
+                    
+                    document.getElementById('trans-select').value = trans;
+                    document.getElementById('ticker-input').value = extras.ticker;
+                    document.getElementById('city-input').value = extras.city || "";
+                    document.getElementById('ticker-text').innerText = extras.ticker + "  •  " + extras.ticker;
+
+                    statusDisplay.style.display = 'none';
+                    renderCampaigns();
+                    
+                    fetchWeather();
+                    if(!weatherLoop) weatherLoop = setInterval(fetchWeather, 1800000);
+
+                    if (ads.length > 0) {
+                        run();
+                        if(!syncMetricsLoop) syncMetricsLoop = setInterval(saveMetricsToDB, 60000);
+                    } else {
+                        showEmptyState();
+                    }
+                } else {
+                    loaderText.innerText = "ERRO: TABELA NÃO INICIALIZADA (ID 1).";
+                }
+            } catch (e) {
+                console.error(e);
+                loaderText.innerText = "FALHA DE CONEXÃO.";
+            }
+        }
+
+        function filterValidAds() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentHourMin = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            validAds = ads.filter(ad => {
+                let isDateValid = true;
+                if (ad.startDate && ad.endDate) isDateValid = todayStr >= ad.startDate && todayStr <= ad.endDate;
+                
+                let isTimeValid = true;
+                if (ad.startTime && ad.endTime) {
+                    if (ad.startTime <= ad.endTime) isTimeValid = currentHourMin >= ad.startTime && currentHourMin <= ad.endTime;
+                    else isTimeValid = currentHourMin >= ad.startTime || currentHourMin <= ad.endTime;
+                }
+                return isDateValid && isTimeValid;
+            });
+        }
+
+        function showEmptyState() {
+            gallery.innerHTML = `
+                <div class="absolute inset-0 flex items-center justify-center bg-[#020617]">
+                    <div class="text-slate-500 font-black text-2xl md:text-5xl uppercase text-center p-10 border-4 border-slate-800/50 border-dashed rounded-[3rem] shadow-2xl bg-slate-900/20">
+                        A Tela está Livre<br><span class="text-lg md:text-2xl font-bold text-blue-500 mt-4 block tracking-widest">Clique no Relógio para Iniciar</span>
+                    </div>
+                </div>`;
+        }
+
+        function run() {
+            if (loop) clearTimeout(loop);
+            filterValidAds();
+
+            if (validAds.length === 0 || adminPanel.style.display === 'block') {
+                if (validAds.length === 0 && ads.length > 0 && adminPanel.style.display !== 'block') {
+                    gallery.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-[#020617] text-amber-500/50 font-black text-3xl md:text-5xl uppercase text-center tracking-widest border-[10px] border-amber-500/10">Fora de Horário Comercial<br>Ou Contratos Expirados.</div>`;
+                }
+                return;
+            }
+
+            if (curIndex >= validAds.length) curIndex = 0;
+            const currentAd = validAds[curIndex];
+            const playTime = (currentAd.duration || 10) * 1000;
+
+            const originalIndex = ads.findIndex(a => a.id === currentAd.id);
+            if (originalIndex !== -1) ads[originalIndex].impressions = (ads[originalIndex].impressions || 0) + 1;
+
+            const slide = document.createElement('div');
+            slide.className = `ad-slide start-${trans}`;
+
+            if (currentAd.type === 'video') {
+                slide.innerHTML = `<video src="${currentAd.url}" class="ad-media" autoplay muted playsinline></video>`;
+            } else {
+                slide.innerHTML = `<img src="${currentAd.url}" class="ad-media">`;
+            }
+
+            if (currentAd.qr && currentAd.qr.trim() !== "") {
+                const qrContainer = document.createElement('div');
+                qrContainer.className = 'qr-overlay';
+                const qrNode = document.createElement('div');
+                qrContainer.appendChild(qrNode);
+                qrContainer.innerHTML += `<span>Acesse</span>`;
+                slide.appendChild(qrContainer);
+                
+                setTimeout(() => { new QRCode(qrContainer.children[0], { text: currentAd.qr, width: 100, height: 100, colorDark : "#0f172a", colorLight : "#fff" }); }, 100);
+            }
+            
+            const old = gallery.querySelector('.active');
+            if (old) {
+                old.classList.remove('active');
+                old.classList.add(`exit-${trans}`);
+                setTimeout(() => { if(old.parentNode) old.remove(); }, 1000);
+            }
+
+            const emptyMsg = gallery.querySelector('.text-slate-500, .text-amber-500\\/50');
+            if(emptyMsg) emptyMsg.remove();
+
+            gallery.appendChild(slide);
+            setTimeout(() => { slide.classList.remove(`start-${trans}`); slide.classList.add('active'); }, 50);
+
+            const pb = document.getElementById('progress-bar');
+            pb.style.transition = 'none'; pb.style.width = '0%';
+            setTimeout(() => { pb.style.transition = `width ${playTime}ms linear`; pb.style.width = '100%'; }, 50);
+
+            curIndex = (curIndex + 1) % validAds.length;
+            loop = setTimeout(run, playTime);
+        }
+
+        function renderCampaigns() {
+            campaignsList.innerHTML = '';
+            const today = getTodayString();
+            document.getElementById('total-ads-badge').innerText = ads.length;
+
+            if (ads.length === 0) {
+                campaignsList.innerHTML = `<div class="text-slate-500 text-sm uppercase text-center mt-10 font-bold border-2 border-dashed border-slate-700/50 p-10 rounded-3xl">Lista Vazia.</div>`;
+                return;
+            }
+
+            const sortedAds = [...ads].sort((a, b) => (b.impressions || 0) - (a.impressions || 0));
+
+            sortedAds.forEach((ad) => {
+                let statusClass = 'status-active'; let statusText = 'No Ar';
+                if (ad.startDate && ad.endDate) {
+                    if (today < ad.startDate) { statusClass = 'status-scheduled'; statusText = 'Agendado'; }
+                    else if (today > ad.endDate) { statusClass = 'status-expired'; statusText = 'Expirado'; }
+                }
+
+                const views = (ad.impressions || 0).toLocaleString('pt-BR');
+                const sDateBr = ad.startDate ? ad.startDate.split('-').reverse().join('/') : '--';
+                const eDateBr = ad.endDate ? ad.endDate.split('-').reverse().join('/') : '--';
+                const timeText = (ad.startTime && ad.endTime) ? `${ad.startTime} às ${ad.endTime}` : '24h';
+                
+                const actualIndex = ads.findIndex(a => a.id === ad.id);
+                const isEditing = editingIndex === actualIndex;
+
+                const card = document.createElement('div');
+                card.className = `glass-card p-5 flex flex-col md:flex-row items-start md:items-center gap-6 ${isEditing ? 'ring-2 ring-amber-500 bg-amber-900/20' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="w-full md:w-40 h-48 md:h-32 bg-black rounded-2xl overflow-hidden flex-shrink-0 border-2 border-slate-700 relative">
+                        ${ad.type === 'video' 
+                            ? `<video src="${ad.url}" class="w-full h-full object-cover"></video><div class="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-md">VÍDEO</div>` 
+                            : `<img src="${ad.url}" class="w-full h-full object-cover">`}
+                    </div>
+                    
+                    <div class="flex-grow w-full">
+                        <div class="flex flex-wrap items-center gap-3 mb-2">
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                            <span class="text-xs text-slate-300 font-bold bg-slate-800 px-3 py-1 rounded-lg border border-slate-600">⌚ ${timeText}</span>
+                        </div>
+                        <h4 class="font-black text-xl text-white mb-1 truncate">${ad.client || 'Sem Nome'}</h4>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">📅 ${sDateBr} até ${eDateBr}</p>
+                    </div>
+                    
+                    <div class="flex flex-row md:flex-col justify-between w-full md:w-auto items-center md:items-end md:pl-6 md:border-l border-white/10 gap-4 mt-4 md:mt-0">
+                        <div class="text-left md:text-right">
+                            <span class="text-[10px] text-slate-400 uppercase font-black mb-1 block">Exibições (Views)</span>
+                            <span class="text-3xl font-black text-blue-400 tabular-nums leading-none tracking-tighter">${views}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="edit-campaign-btn p-3 bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white rounded-xl transition-all" data-id="${ad.id}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button class="del-campaign-btn p-3 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all" data-id="${ad.id}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                campaignsList.appendChild(card);
+            });
+
+            document.querySelectorAll('.del-campaign-btn').forEach(btn => {
+                btn.onclick = async (e) => {
+                    e.stopPropagation();
+                    if(confirm("Deseja EXCLUIR permanentemente esta campanha?")) {
+                        const adId = e.currentTarget.getAttribute('data-id');
+                        const idx = ads.findIndex(a => String(a.id) === String(adId));
+                        if (idx > -1) {
+                            e.currentTarget.innerHTML = '...';
+                            ads.splice(idx, 1);
+                            if (editingIndex === idx) resetForm();
+                            else if (editingIndex > idx) editingIndex--; 
+                            renderCampaigns();
+                            filterValidAds();
+                            await client.from('configuracoes').update({ links: ads }).eq('id', 1);
+                        }
                     }
                 }
-            } catch (err) {
-                console.error("Erro ao buscar dados:", err.message);
-            }
+            });
+
+            document.querySelectorAll('.edit-campaign-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const adId = e.currentTarget.getAttribute('data-id');
+                    const idx = ads.findIndex(a => String(a.id) === String(adId));
+                    if (idx === -1) return;
+
+                    editingIndex = idx;
+                    const ad = ads[idx];
+
+                    document.getElementById('client-name').value = ad.client || "";
+                    if(ad.startDate) document.getElementById('start-date').value = ad.startDate;
+                    if(ad.endDate) document.getElementById('end-date').value = ad.endDate;
+                    document.getElementById('start-time').value = ad.startTime || "00:00";
+                    document.getElementById('end-time').value = ad.endTime || "23:59";
+                    document.getElementById('ad-duration').value = ad.duration || 10;
+                    document.getElementById('qr-link').value = ad.qr || "";
+                    document.getElementById('file-input').value = ""; 
+
+                    document.getElementById('form-title').innerHTML = '<span class="w-4 h-4 bg-amber-500 rounded-full mr-3"></span>Editando Contrato';
+                    const upBtn = document.getElementById('upload-btn');
+                    upBtn.innerText = 'Salvar Alterações';
+                    upBtn.classList.replace('from-blue-600', 'from-amber-600');
+                    upBtn.classList.replace('to-blue-500', 'to-amber-500');
+                    document.getElementById('cancel-edit-btn').classList.remove('hidden');
+                    document.getElementById('edit-file-hint').classList.remove('hidden');
+                    
+                    renderCampaigns(); 
+                    document.getElementById('admin-panel').scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
         }
 
-        async function init() {
-            await fetchAds();
-            pollingInterval = setInterval(fetchAds, INTERVALO_POLLING);
+        function resetForm() {
+            editingIndex = -1;
+            document.getElementById('file-input').value = "";
+            document.getElementById('client-name').value = "";
+            document.getElementById('qr-link').value = "";
+            document.getElementById('start-date').value = getTodayString();
+            document.getElementById('end-date').value = getNextMonthString();
+            document.getElementById('start-time').value = "00:00";
+            document.getElementById('end-time').value = "23:59";
+            document.getElementById('ad-duration').value = 10;
+
+            document.getElementById('form-title').innerHTML = '<span class="w-4 h-4 bg-blue-500 rounded-full mr-3"></span>Nova Campanha';
+            const upBtn = document.getElementById('upload-btn');
+            upBtn.innerText = 'Ativar Contrato';
+            upBtn.classList.replace('from-amber-600', 'from-blue-600');
+            upBtn.classList.replace('to-amber-500', 'to-blue-500');
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('edit-file-hint').classList.add('hidden');
+            
+            renderCampaigns();
         }
 
-        function updateAdsList(linksArray) {
-            if (linksArray.length === 0) {
-                 document.getElementById('loader').innerHTML = "Sem anúncios. Abre o painel para adicionar.";
-                 return;
-            }
-            ads = linksArray;
-            document.getElementById('links-input').value = ads.join('\n');
-            document.getElementById('loader').classList.add('hidden');
-            if (!timer) {
-                currentIndex = 0;
-                startCarousel();
-            }
-        }
-
-        function startCarousel() {
-            if (timer) clearTimeout(timer);
-            showAd();
-        }
-
-        function showAd() {
+        async function saveMetricsToDB() {
             if (ads.length === 0) return;
-            const url = ads[currentIndex];
-            const container = document.getElementById('ad-container');
-            
-            const nextSlide = document.createElement('div');
-            nextSlide.className = 'absolute inset-0 fade-transition opacity-0 flex items-center justify-center';
-            nextSlide.innerHTML = `<img src="${url}" class="ad-image" onerror="handleImgError(this)">`;
-            
-            const prevSlide = container.querySelector('.opacity-100');
-            if (prevSlide) {
-                prevSlide.classList.replace('opacity-100', 'opacity-0');
-                setTimeout(() => { if (prevSlide.parentNode) prevSlide.remove(); }, 1000);
-            }
-
-            container.appendChild(nextSlide);
-            setTimeout(() => { if (nextSlide) nextSlide.classList.replace('opacity-0', 'opacity-100'); }, 50);
-
-            animateProgressBar();
-            currentIndex = (currentIndex + 1) % ads.length;
-            timer = setTimeout(showAd, INTERVALO_TRANSICAO);
+            await client.from('configuracoes').update({ links: ads }).eq('id', 1);
         }
 
-        function animateProgressBar() {
-            const pb = document.getElementById('progress-bar');
-            pb.style.transition = 'none';
-            pb.style.width = '0%';
-            setTimeout(() => {
-                pb.style.transition = `width ${INTERVALO_TRANSICAO}ms linear`;
-                pb.style.width = '100%';
-            }, 50);
+        function generateReport() {
+            const reportDiv = document.getElementById('report-area');
+            let content = `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">Relatório de Desempenho DOOH</h1>
+                    <p><strong>Data de Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #f1f5f9; text-align: left;">
+                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Anunciante</th>
+                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Período</th>
+                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Horário</th>
+                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Exibições Entregues</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            ads.forEach(ad => {
+                const sDate = ad.startDate ? ad.startDate.split('-').reverse().join('/') : '--';
+                const eDate = ad.endDate ? ad.endDate.split('-').reverse().join('/') : '--';
+                const timeStr = (ad.startTime && ad.endTime) ? `${ad.startTime} - ${ad.endTime}` : '24h';
+                
+                content += `
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1; font-weight: bold;">${ad.client || 'Sem Nome'}</td>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1;">${sDate} até ${eDate}</td>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1;">${timeStr}</td>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1; color: #2563eb; font-weight: bold;">${(ad.impressions || 0).toLocaleString('pt-BR')}</td>
+                    </tr>
+                `;
+            });
+            
+            content += `</tbody></table><p style="margin-top: 30px; font-size: 12px; color: #64748b; text-align: center;">Este é um documento gerado automaticamente pelo sistema de gestão de Mídia Indoor.</p></div>`;
+            
+            reportDiv.innerHTML = content;
+            window.print();
+            setTimeout(() => { reportDiv.innerHTML = ""; }, 1000);
         }
 
-        window.handleImgError = (img) => {
-            img.src = 'https://via.placeholder.com/1080x1920?text=Imagem+Indisponivel';
+        document.getElementById('clock-area').onclick = () => {
+            adminPanel.style.display = 'block';
+            renderCampaigns(); 
         };
 
-        const toggleAdmin = () => {
-            const panel = document.getElementById('admin-panel');
-            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+        document.getElementById('close-admin').onclick = () => {
+            adminPanel.style.display = 'none';
+            resetForm();
+            filterValidAds();
+            run(); 
         };
 
-        const saveToSupabase = async () => {
-            const btn = document.getElementById('save-btn');
-            const status = document.getElementById('status-msg');
-            const links = document.getElementById('links-input').value.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+        document.getElementById('cancel-edit-btn').onclick = resetForm;
+
+        document.getElementById('upload-btn').onclick = async () => {
+            const fileInput = document.getElementById('file-input');
+            const clientName = document.getElementById('client-name').value || "Cliente Geral";
+            const sDate = document.getElementById('start-date').value;
+            const eDate = document.getElementById('end-date').value;
+            const sTime = document.getElementById('start-time').value;
+            const eTime = document.getElementById('end-time').value;
+            const duration = parseInt(document.getElementById('ad-duration').value) || 10;
+            const qr = document.getElementById('qr-link').value;
             
-            if (links.length === 0) return alert("Insira pelo menos um link.");
+            if (editingIndex === -1 && fileInput.files.length === 0) return alert("Anexe um arquivo de foto ou vídeo.");
 
-            btn.disabled = true;
-            status.innerText = "A GUARDAR...";
+            const btn = document.getElementById('upload-btn');
+            const msg = document.getElementById('upload-msg');
+            btn.innerText = "PROCESSANDO ARQUIVOS..."; btn.disabled = true;
 
-            const { error } = await supabase.from('configuracoes').update({ links }).eq('id', 1);
-
-            if (error) {
-                status.innerText = "ERRO AO GUARDAR.";
+            if (editingIndex === -1) {
+                for (let f of fileInput.files) {
+                    const ext = f.name.split('.').pop().toLowerCase();
+                    const n = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+                    const { error } = await client.storage.from('anuncios').upload(n, f);
+                    
+                    if (!error) {
+                        const { data } = client.storage.from('anuncios').getPublicUrl(n);
+                        const isVid = f.type.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
+                        
+                        ads.push({ 
+                            id: n, client: clientName, url: data.publicUrl, type: isVid ? 'video' : 'image', 
+                            duration: duration, qr: qr, startDate: sDate, endDate: eDate, startTime: sTime, endTime: eTime, impressions: 0
+                        });
+                    } else { alert("Erro ao enviar: " + error.message); }
+                }
+                msg.innerText = "Nova Campanha Ativada!";
             } else {
-                status.innerText = "ATUALIZADO!";
-                ads = links;
-                setTimeout(() => { status.innerText = ""; toggleAdmin(); }, 1500);
+                const ad = ads[editingIndex];
+                if (fileInput.files.length > 0) {
+                    const f = fileInput.files[0]; 
+                    const ext = f.name.split('.').pop().toLowerCase();
+                    const n = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+                    const { error } = await client.storage.from('anuncios').upload(n, f);
+                    
+                    if (!error) {
+                        const { data } = client.storage.from('anuncios').getPublicUrl(n);
+                        const isVid = f.type.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
+                        ad.url = data.publicUrl; ad.type = isVid ? 'video' : 'image'; ad.id = n; 
+                    } else { alert("Erro ao substituir arquivo."); }
+                }
+                
+                ad.client = clientName; ad.startDate = sDate; ad.endDate = eDate; ad.startTime = sTime; ad.endTime = eTime; ad.duration = duration; ad.qr = qr;
+                msg.innerText = "Alterações Salvas!";
+            }
+            
+            await client.from('configuracoes').update({ links: ads }).eq('id', 1);
+            
+            renderCampaigns();
+            resetForm();
+            btn.disabled = false;
+            setTimeout(() => msg.innerText = "", 4000);
+        };
+
+        document.getElementById('save-settings-btn').onclick = async () => {
+            const btn = document.getElementById('save-settings-btn');
+            extras.ticker = document.getElementById('ticker-input').value;
+            extras.city = document.getElementById('city-input').value;
+            trans = document.getElementById('trans-select').value;
+            document.getElementById('ticker-text').innerText = extras.ticker + "  •  " + extras.ticker;
+            
+            fetchWeather(); 
+            
+            btn.innerText = "GRAVANDO..."; btn.disabled = true;
+
+            const { error } = await client.from('configuracoes').update({ transicao: trans, config_extras: extras }).eq('id', 1);
+            if (!error) {
+                btn.innerText = "TUDO SALVO!";
+                setTimeout(() => { btn.innerText = "Salvar Configurações"; }, 2000);
+            } else {
+                alert("Erro de Sincronização.");
+                btn.innerText = "Salvar Configurações";
             }
             btn.disabled = false;
         };
 
-        // LÓGICA DE UPLOAD DE FICHEIRO MELHORADA
-        const uploadFile = async () => {
-            const fileInput = document.getElementById('image-file');
-            const btn = document.getElementById('upload-btn');
-            const status = document.getElementById('status-msg');
-            
-            if (!fileInput.files || fileInput.files.length === 0) {
-                return alert("Seleciona um ficheiro primeiro.");
-            }
-
-            const file = fileInput.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const filePath = fileName;
-
-            btn.disabled = true;
-            btn.innerText = "A ENVIAR...";
-
-            try {
-                // 1. Upload para o bucket 'anuncios'
-                const { data, error: uploadError } = await supabase.storage
-                    .from('anuncios')
-                    .upload(filePath, file);
-
-                if (uploadError) {
-                    // Se o erro for de RLS, dar instrução clara
-                    if (uploadError.message && uploadError.message.includes('row-level security policy')) {
-                        throw new Error("Erro de Permissão (RLS): Tens de executar o script SQL de configuração no teu painel do Supabase para permitir uploads públicos.");
-                    }
-                    throw uploadError;
-                }
-
-                // 2. Obter URL pública
-                const { data: { publicUrl } } = supabase.storage
-                    .from('anuncios')
-                    .getPublicUrl(filePath);
-
-                // 3. Adicionar o novo link ao campo de texto
-                const currentLinks = document.getElementById('links-input').value;
-                document.getElementById('links-input').value = (currentLinks ? currentLinks.trim() + '\n' : '') + publicUrl;
-                
-                alert("Imagem enviada com sucesso! Agora clica em 'Guardar Configurações' para ativar.");
-                fileInput.value = "";
-            } catch (err) {
-                console.error("Erro no upload:", err);
-                alert(err.message || "Erro desconhecido ao enviar imagem.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Enviar Ficheiro";
-            }
-        };
-
-        document.getElementById('admin-toggle-btn').addEventListener('click', toggleAdmin);
-        document.getElementById('admin-close-btn').addEventListener('click', toggleAdmin);
-        document.getElementById('save-btn').addEventListener('click', saveToSupabase);
-        document.getElementById('upload-btn').addEventListener('click', uploadFile);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                window.location.href = encodeURI('cobrança.html');
-            }
-        });
-
-        document.body.onclick = (e) => {
-            if (document.getElementById('admin-panel').contains(e.target) || e.target.closest('button')) return;
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
-        };
-
-        init();
+        window.onkeydown = (e) => { if (e.key === 'Enter') { window.location.assign('cobrança.html'); } };
+        window.onload = start;
     </script>
 </body>
 </html>
