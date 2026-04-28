@@ -136,45 +136,6 @@
         .custom-scroll::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
-<script>
-    // CONFIGURAÇÃO DO TEMPO DE INATIVIDADE (10 segundos)
-    const SECONDS_TO_RETURN = 10;
-    let timeLeft = SECONDS_TO_RETURN;
-    let inactivityInterval = null;
-
-    function startTimer() {
-        // Reinicia o contador
-        timeLeft = SECONDS_TO_RETURN;
-
-        // Limpa intervalos anteriores
-        if (inactivityInterval) clearInterval(inactivityInterval);
-
-        // Inicia nova contagem regressiva
-        inactivityInterval = setInterval(() => {
-            timeLeft--;
-
-            if (timeLeft <= 0) {
-                clearInterval(inactivityInterval);
-                window.location.href = 'index.html'; // RETORNO À GALERIA
-            }
-        }, 1000);
-    }
-
-    // Reinicia o timer em qualquer interação
-    function resetActivity() {
-        startTimer();
-    }
-
-    // Evento detectores de atividade
-    window.addEventListener('mousemove', resetActivity);
-    window.addEventListener('mousedown', resetActivity);
-    window.addEventListener('keydown', resetActivity);
-    window.addEventListener('touchstart', resetActivity);
-    window.addEventListener('scroll', resetActivity);
-
-    // Inicia timer ao carregar página
-    window.onload = startTimer;
-</script>
 <body class="md:p-6">
 
 <div class="terminal-container">
@@ -207,7 +168,7 @@
             <div class="flex-1 flex flex-col items-center justify-center mb-4">
                 <span id="instruction-label" class="text-[13px] text-zinc-500 tracking-[0.5em] uppercase mb-6 opacity-60">Valor</span>
                 <div class="flex items-baseline justify-center w-full overflow-hidden px-4">
-                    <span class="text-2x1 font-light text-zinc-600 mr-1">R$</span>
+                    <span class="text-2x1 font-light text-zinc-100 mr-1">R$</span>
                     <span id="display-value" class="text-[8rem] md:text-[8rem] font-bold tracking-normal leading-none">0,00</span>
                 </div>
             </div>
@@ -343,8 +304,8 @@
                     <div>
                         <label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Entrada</label>
                         <select id="input-kb-type" class="minimal-input cursor-pointer">
-                            <option value="virtual">Teclado Touch</option>
                             <option value="fisico">Físico Externo</option>
+                            <option value="virtual">Teclado Touch</option>
                         </select>
                     </div>
                     <div>
@@ -419,6 +380,11 @@
     let unsubscribePayment = null; // Função para parar de escutar a transação atual
     let mpPollInterval = null; // Timer para a API do Mercado Pago
     
+    // VARIÁVEIS DO SISTEMA DE INATIVIDADE
+    const SECONDS_TO_RETURN = 60;
+    let inactivityTimerLeft = SECONDS_TO_RETURN;
+    let inactivityInterval = null;
+
     // Configuração Padrão Inicial
     let terminalConfig = {
         terminalName: "CAIXA",
@@ -639,8 +605,19 @@
     function pollMercadoPago(paymentId, amount) {
         if (mpPollInterval) clearInterval(mpPollInterval);
         
+        let pollCount = 0;
+        const maxPolls = 60; // Limite de 5 minutos (60 tentativas de 5 seg)
+
         // Verifica o status do pagamento a cada 5 segundos
         mpPollInterval = setInterval(async () => {
+            pollCount++;
+            if (pollCount > maxPolls) {
+                clearInterval(mpPollInterval);
+                showMessage("Tempo limite excedido.", false);
+                setTimeout(resetApp, 3000);
+                return;
+            }
+
             try {
                 const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                     headers: { "Authorization": `Bearer ${terminalConfig.mpApiKey}` }
@@ -907,6 +884,72 @@
     window.addEventListener('load', () => {
         lucide.createIcons();
         initFirebase();
+        startInactivityTimer();
+        setupNetworkListeners();
+    });
+
+    // DETEÇÃO DE INTERNET EM TEMPO REAL
+    function setupNetworkListeners() {
+        window.addEventListener('online', updateNetworkUI);
+        window.addEventListener('offline', updateNetworkUI);
+    }
+
+    function updateNetworkUI() {
+        const label = document.getElementById('terminal-name-label');
+        const dot = document.getElementById('status-dot');
+        if (!label || !dot) return;
+
+        if (navigator.onLine) {
+            dot.className = "w-1 h-1 bg-emerald-500 rounded-full";
+            label.classList.remove('text-red-500', 'text-zinc-500');
+            label.classList.add('text-emerald-500');
+            label.textContent = terminalConfig.terminalName || "ONLINE";
+        } else {
+            dot.className = "w-1 h-1 bg-red-500 rounded-full animate-pulse";
+            label.classList.remove('text-emerald-500', 'text-zinc-500');
+            label.classList.add('text-red-500');
+            label.textContent = "SEM INTERNET";
+        }
+    }
+
+    // SISTEMA DE INATIVIDADE
+    function startInactivityTimer() {
+        inactivityTimerLeft = SECONDS_TO_RETURN;
+        if (inactivityInterval) clearInterval(inactivityInterval);
+
+        inactivityInterval = setInterval(() => {
+            inactivityTimerLeft--;
+            if (inactivityTimerLeft <= 0) {
+                clearInterval(inactivityInterval);
+                resetApp(); // Limpa o terminal silenciosamente em vez de piscar a página
+                startInactivityTimer(); // Reinicia o ciclo
+            }
+        }, 1000);
+    }
+
+    function resetActivity() {
+        inactivityTimerLeft = SECONDS_TO_RETURN;
+    }
+
+    window.addEventListener('mousemove', resetActivity);
+    window.addEventListener('mousedown', resetActivity);
+    window.addEventListener('keydown', resetActivity);
+    window.addEventListener('touchstart', resetActivity);
+    window.addEventListener('scroll', resetActivity);
+
+    // GESTÃO DE FULLSCREEN AUTOMÁTICO (Tira as bordas nativas)
+    document.body.addEventListener('click', (e) => { 
+        const isSettingsOpen = !document.getElementById('view-settings').classList.contains('hidden');
+        
+        // Evita forçar o fullscreen se o menu estiver aberto ou se o utilizador clicar num botão/input
+        if (isSettingsOpen || e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) {
+            return;
+        }
+        
+        // Solicita o fullscreen caso ainda não esteja ativo
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {}); 
+        }
     });
 </script>
 </body>
