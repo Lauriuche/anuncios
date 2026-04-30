@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#18181b" id="meta-theme-color">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMyIi8+PC9zdmc+">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Terminal%20PDV%22%2C%22short_name%22%3A%22PDV%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22fullscreen%22%2C%22background_color%22%3A%22%2318181b%22%2C%22theme_color%22%3A%22%2318181b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI%2BPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMyIi8%2BPC9zdmc%2B%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+
+    <title>Terminal PDV • Pro Minimal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: 'var(--primary-color)' } } }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap');
+        
+        :root {
+            --primary-color: #10b981; 
+        }
+
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; 
+            user-select: none; -webkit-user-select: none;
+            transition: background-color 0.4s, color 0.4s;
+        }
+
+        body { background-color: #18181b; color: #ffffff; }
+        .dark body { background-color: #18181b; color: #ffffff; }
+        html:not(.dark) body { background-color: #f4f4f5; color: #18181b; }
+        
+        .terminal-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
+
+        @media (min-width: 768px) {
+            body { display: flex; align-items: center; justify-content: center; background-color: #09090b !important; }
+            html:not(.dark) body { background-color: #e4e4e7 !important; }
+            .terminal-container { max-width: 450px; height: 90vh; max-height: 850px; border-radius: 40px; overflow: hidden; }
+        }
+
+        .keypad-btn { background: transparent; border-radius: 999px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 400; cursor: pointer; }
+        .keypad-btn:active { background: rgba(255, 255, 255, 0.1); transform: scale(0.9); }
+        html:not(.dark) .keypad-btn:active { background: rgba(0,0,0,0.05); }
+
+        .btn-enter { background: #ffffff; color: #000000; font-weight: 700; }
+        .btn-enter:active { background: #e0e0e0; transform: scale(0.9); }
+        html:not(.dark) .btn-enter { background: #18181b; color: #ffffff; }
+
+        .qr-wrapper { background: #ffffff; padding: 16px; border-radius: 24px; }
+        .view-transition { animation: fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .minimal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #3f3f46; padding: 12px 0; font-size: 1rem; outline: none; transition: border-color 0.3s; color: white; }
+        .minimal-input:focus { border-bottom-color: var(--primary-color); }
+        html:not(.dark) .minimal-input { color: #18181b; border-bottom-color: #d4d4d8; }
+
+        #message-box { position: absolute; top: 40px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 100; transition: all 0.4s; opacity: 0; pointer-events: none; }
+        #message-box.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .view-overlay { background: #18181b; z-index: 20; position: absolute; inset: 0; }
+        html:not(.dark) .view-overlay { background: #ffffff; }
+
+        #screensaver { z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 1s; }
+        #screensaver.active { opacity: 1; pointer-events: auto; }
+        .bounce { animation: float 10s infinite alternate ease-in-out; }
+        @keyframes float { 
+            0% { transform: translate(0, 0); } 
+            25% { transform: translate(40px, 100px); }
+            50% { transform: translate(-40px, 200px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .bar-chart-fill { transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .custom-scroll::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body class="md:p-6">
+
+<div class="terminal-container">
+    
+    <!-- Toast Message -->
+    <div id="message-box" class="bg-zinc-800 border border-zinc-700 text-white px-5 py-3 rounded-full text-xs font-medium flex items-center gap-3 shadow-2xl">
+        <div id="msg-dot" class="w-1.5 h-1.5 bg-white rounded-full"></div>
+        <span id="message-text" class="tracking-wide">Processando</span>
+    </div>
+
+    <!-- Screensaver -->
+    <div id="screensaver" class="absolute inset-0 bg-zinc-950 flex items-center justify-center cursor-pointer" onclick="resetActivity()">
+        <div class="bounce text-center opacity-30">
+            <i data-lucide="scan-line" size="64" class="text-white mx-auto mb-4"></i>
+            <p id="ss-clock" class="text-4xl font-light text-white tracking-widest">00:00</p>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="px-8 pt-8 flex justify-between items-center z-10 relative">
+        <div class="flex items-center gap-2 opacity-60">
+            <div id="status-dot" class="w-1.5 h-1.5 bg-zinc-500 rounded-full transition-colors duration-500"></div>
+            <span id="terminal-name-label" class="text-[9px] font-bold tracking-[0.2em] uppercase">OFFLINE</span>
+        </div>
+        <button onclick="toggleSettings()" class="text-[10px] font-medium text-zinc-500 hover:text-white tracking-widest opacity-60 transition-opacity">
+            <span id="clock">00:00:00</span>
+        </button>
+    </div>
+
+    <!-- ÁREA PRINCIPAL -->
+    <div class="flex-1 relative flex flex-col min-h-0 overflow-hidden">
+        
+        <div id="view-main" class="flex-1 flex flex-col p-6 view-transition">
+            
+            <!-- Badge Carrinho Ativo -->
+            <div class="h-12 flex justify-center items-end opacity-0 transition-opacity" id="sum-badge">
+                <div class="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase flex items-center gap-2">
+                    <i data-lucide="shopping-cart" size="12"></i>
+                    <span id="sum-label">Total Carrinho: R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col items-center justify-center mb-6">
+                <span id="instruction-label" class="text-[13px] text-zinc-500 tracking-[0.5em] uppercase mb-4 opacity-40">Valor</span>
+                <div class="flex items-baseline justify-center w-full px-4">
+                    <span class="text-2xl font-light text-zinc-500 mr-2">R$</span>
+                    <span id="display-value" class="text-[7.5rem] font-bold tracking-tighter leading-none transition-all">0,00</span>
+                </div>
+            </div>
+
+            <!-- Teclado de 3 Colunas -->
+            <div id="virtual-keypad" class="grid grid-cols-3 gap-y-4 gap-x-4 pb-8">
+                <button onclick="pressKey('1')" class="keypad-btn h-16">1</button>
+                <button onclick="pressKey('2')" class="keypad-btn h-16">2</button>
+                <button onclick="pressKey('3')" class="keypad-btn h-16">3</button>
+                
+                <button onclick="pressKey('4')" class="keypad-btn h-16">4</button>
+                <button onclick="pressKey('5')" class="keypad-btn h-16">5</button>
+                <button onclick="pressKey('6')" class="keypad-btn h-16">6</button>
+                
+                <button onclick="pressKey('7')" class="keypad-btn h-16">7</button>
+                <button onclick="pressKey('8')" class="keypad-btn h-16">8</button>
+                <button onclick="pressKey('9')" class="keypad-btn h-16">9</button>
+                
+                <button onclick="pressKey('back')" class="keypad-btn h-16 text-zinc-500"><i data-lucide="delete" size="28"></i></button>
+                <button onclick="pressKey('0')" class="keypad-btn h-16">0</button>
+                <button onclick="pressKey('enter')" class="keypad-btn btn-enter h-16 rounded-3xl"><i data-lucide="arrow-right" size="32"></i></button>
+            </div>
+        </div>
+
+        <!-- VIEW CALCULADORA/CARRINHO (Atalho ,09) -->
+        <div id="view-calculator" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-30">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold tracking-tighter text-white">Calculadora</h2>
+                <button onclick="resetApp()" class="text-zinc-500"><i data-lucide="x" size="24"></i></button>
+            </div>
+            <div class="bg-zinc-800/50 rounded-3xl p-6 border border-zinc-700 mb-6">
+                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Total Acumulado</p>
+                <p id="calc-cart-total" class="text-4xl font-black text-primary tracking-tighter">R$ 0,00</p>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll space-y-3 mb-6" id="cart-items-list"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="clearSum()" class="py-4 rounded-2xl bg-zinc-900 text-red-500 font-bold uppercase tracking-widest text-[10px] border border-red-500/10">Limpar Tudo</button>
+                <button onclick="handleActionFromCalc()" class="py-4 rounded-2xl bg-primary text-black font-bold uppercase tracking-widest text-[10px]">Fechar Venda</button>
+            </div>
+        </div>
+
+        <!-- MÉTODOS DE PAGAMENTO -->
+        <div id="view-pay-methods" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-20">
+            <div class="mb-10 text-center mt-4">
+                <p class="text-zinc-500 text-[10px] uppercase tracking-[0.2em] mb-2 opacity-60">Cobrar Total</p>
+                <span class="text-5xl font-bold text-white tracking-tighter" id="methods-amount-label">R$ 0,00</span>
+            </div>
+            <div class="flex-1 flex flex-col gap-4">
+                <button onclick="startPix()" class="flex-1 bg-primary text-black rounded-3xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
+                    <i data-lucide="qr-code" size="32" stroke-width="1.5"></i>
+                    <span class="font-bold tracking-widest uppercase text-xs">PIX</span>
+                </button>
+                <div class="flex gap-4 flex-1">
+                    <button onclick="startCard()" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-3xl flex flex-col items-center justify-center gap-2 text-white active:scale-95 transition-all">
+                        <i data-lucide="credit-card" size="24"></i>
+                        <span class="font-bold tracking-widest uppercase text-[10px]">Cartão</span>
+                    </button>
+                    <button onclick="startCash()" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-3xl flex flex-col items-center justify-center gap-2 text-white active:scale-95 transition-all">
+                        <i data-lucide="banknote" size="24"></i>
+                        <span class="font-bold tracking-widest uppercase text-[10px]">Dinheiro</span>
+                    </button>
+                </div>
+            </div>
+            <button onclick="resetApp()" class="mt-8 py-4 w-full text-zinc-500 text-[10px] font-bold uppercase tracking-widest">CANCELAR</button>
+        </div>
+
+        <!-- TIPO DE CARTÃO -->
+        <div id="view-card-type" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-30 justify-center">
+            <h3 class="text-center text-zinc-500 text-[10px] uppercase tracking-widest mb-8">Selecione no Terminal</h3>
+            <div class="flex flex-col gap-4">
+                <button onclick="confirmCard('Crédito')" class="py-6 bg-zinc-800 border border-zinc-700 rounded-3xl text-white font-bold uppercase tracking-widest active:scale-95">CRÉDITO</button>
+                <button onclick="confirmCard('Débito')" class="py-6 bg-zinc-800 border border-zinc-700 rounded-3xl text-white font-bold uppercase tracking-widest active:scale-95">DÉBITO</button>
+            </div>
+            <button onclick="showPaymentMethods()" class="mt-8 py-4 w-full text-zinc-500 text-[10px] font-bold uppercase tracking-widest">VOLTAR</button>
+        </div>
+
+        <!-- DINHEIRO / TROCO -->
+        <div id="view-cash-input" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-30">
+            <div class="text-center mt-4 mb-8">
+                <p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">Total: <span id="cash-total-label" class="text-white font-bold">R$ 0,00</span></p>
+                <p class="text-primary text-[10px] uppercase tracking-widest mb-1 mt-6">Dinheiro Recebido</p>
+                <div class="flex items-baseline justify-center">
+                    <span class="text-xl font-light text-primary mr-1">R$</span>
+                    <span id="cash-received-display" class="text-5xl font-bold text-primary tracking-tighter">0,00</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 pb-6">
+                <button onclick="cashKey('1')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">1</button>
+                <button onclick="cashKey('2')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">2</button>
+                <button onclick="cashKey('3')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">3</button>
+                <button onclick="cashKey('4')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">4</button>
+                <button onclick="cashKey('5')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">5</button>
+                <button onclick="cashKey('6')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">6</button>
+                <button onclick="cashKey('back')" class="keypad-btn bg-zinc-800 h-14 rounded-2xl text-zinc-500"><i data-lucide="delete" size="20"></i></button>
+                <button onclick="cashKey('0')" class="keypad-btn bg-zinc-900 h-14 rounded-2xl text-white">0</button>
+                <button onclick="confirmCash()" id="btn-confirm-cash" class="keypad-btn bg-primary h-14 rounded-2xl text-black"><i data-lucide="check" size="24"></i></button>
+            </div>
+            <div id="change-panel" class="hidden bg-zinc-800/50 border border-zinc-700 p-4 rounded-2xl text-center mb-4">
+                <p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Troco a Devolver</p>
+                <p id="change-amount-display" class="text-3xl font-bold text-white">R$ 0,00</p>
+            </div>
+            <button onclick="showPaymentMethods()" class="mt-4 py-2 w-full text-zinc-500 text-[10px] font-bold uppercase tracking-widest">VOLTAR</button>
+        </div>
+
+        <!-- ECRÃ PIX -->
+        <div id="view-pix" class="hidden absolute inset-0 view-overlay overflow-y-auto custom-scroll z-30">
+            <div class="min-h-full flex flex-col items-center justify-center p-6 text-center">
+                <div class="qr-wrapper mb-4"><div id="pix-qr-box" class="mx-auto"></div></div>
+                <p id="tx-id-display" class="text-zinc-600 font-mono text-[9px] mb-6 tracking-widest"></p>
+                <div class="mb-6">
+                    <p class="text-zinc-500 text-[10px] uppercase tracking-[0.2em] mb-1 opacity-60">Total a Pagar via PIX</p>
+                    <span class="text-4xl font-bold text-white tracking-tighter" id="pix-amount-label">R$ 0,00</span>
+                </div>
+                <div id="pix-status-indicator" class="flex items-center gap-3 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 mb-6">
+                    <div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <span class="text-primary text-[9px] font-bold tracking-widest uppercase">A aguardar Pagamento...</span>
+                </div>
+                <button onclick="showPaymentMethods()" class="px-6 py-3 rounded-full border border-zinc-800 text-zinc-400 text-[9px] font-bold uppercase tracking-widest">CANCELAR</button>
+            </div>
+        </div>
+
+        <!-- ECRÃ SUCESSO -->
+        <div id="view-success" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 view-transition z-40 text-center">
+            <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_var(--primary-color)] animate-[bounce_1s_ease-in-out]">
+                <i data-lucide="check" class="text-black" stroke-width="4" size="48"></i>
+            </div>
+            <h2 class="text-primary font-extrabold tracking-widest uppercase text-xl mb-2">PAGO COM SUCESSO</h2>
+            <p id="success-method-label" class="text-zinc-500 text-xs tracking-widest uppercase mb-12">Método</p>
+            <button onclick="resetApp()" class="px-10 py-4 rounded-full bg-zinc-800 border border-zinc-700 text-white font-bold uppercase tracking-widest active:scale-95">CONTINUAR</button>
+        </div>
+
+        <!-- AJUSTES -->
+        <div id="view-settings" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-50">
+            <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Ajustes</h2><button onclick="toggleSettings()" class="text-white"><i data-lucide="x" stroke-width="1.5"></i></button></div>
+            <div class="space-y-8 flex-1 overflow-y-auto pr-2 custom-scroll pb-10 text-left">
+                <div><p class="text-white font-bold text-sm mb-4 border-b border-zinc-700 pb-2">Identidade Visual</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Tema</label><select id="input-theme" class="minimal-input" onchange="previewTheme()"><option value="dark">Escuro</option><option value="light">Claro</option></select></div>
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Cor</label><select id="input-color" class="minimal-input" onchange="previewTheme()"><option value="#10b981">Verde</option><option value="#8b5cf6">Roxo</option><option value="#3b82f6">Azul</option><option value="#f97316">Laranja</option></select></div>
+                    </div>
+                </div>
+                <div><p class="text-white font-bold text-sm mb-4 border-b border-zinc-700 pb-2">Hardware</p>
+                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Modo Teclado</label><select id="input-kb-type" class="minimal-input"><option value="virtual">Virtual (Touch)</option><option value="fisico">Físico (Externo)</option></select></div>
+                </div>
+                <div><p class="text-white font-bold text-sm mb-4 border-b border-zinc-700 pb-2">Rede e Contato</p>
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Nome Rede Wi-Fi</label><input type="text" id="input-wifi-ssid" class="minimal-input" placeholder="MinhaRede"></div>
+                            <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Senha Wi-Fi</label><input type="text" id="input-wifi-pass" class="minimal-input" placeholder="Senha123"></div>
+                        </div>
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">WhatsApp (Somente números)</label><input type="text" id="input-whatsapp" class="minimal-input" placeholder="5511999999999"></div>
+                    </div>
+                </div>
+                <div><p class="text-white font-bold text-sm mb-4 border-b border-zinc-700 pb-2">Sistema</p>
+                    <div class="space-y-6">
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Nome Terminal</label><input type="text" id="input-terminal-name" class="minimal-input"></div>
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">API Key Mercado Pago</label><input type="password" id="input-api-key" class="minimal-input"></div>
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Chave PIX Backup</label><input type="text" id="input-pix-key" class="minimal-input"></div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="saveSettings()" id="btn-save" class="mt-4 py-5 w-full rounded-full bg-primary text-black font-bold uppercase tracking-widest text-[10px] active:scale-95">Salvar Definições</button>
+        </div>
+
+        <!-- HISTÓRICO E FECHAMENTO -->
+        <div id="view-closing" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-30">
+            <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Fechamento</h2><button onclick="resetApp()" class="text-white"><i data-lucide="x" stroke-width="1.5"></i></button></div>
+            <div class="flex-1 overflow-y-auto custom-scroll pb-6">
+                <p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Total do Turno</p><p id="closing-total" class="text-4xl font-bold text-primary mb-8 tracking-tighter">R$ 0,00</p>
+                <div class="w-full h-3 bg-zinc-800 rounded-full flex overflow-hidden mb-4"><div id="bar-pix" class="h-full bg-primary" style="width: 0%"></div><div id="bar-card" class="h-full bg-blue-500" style="width: 0%"></div><div id="bar-cash" class="h-full bg-amber-500" style="width: 0%"></div></div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 bg-zinc-800/40 rounded-2xl border border-white/5"><div class="flex items-center gap-3"><div class="w-3 h-3 bg-primary rounded-full"></div><span class="text-sm font-bold text-white">PIX</span></div><span id="closing-val-pix" class="font-mono text-white">R$ 0,00</span></div>
+                    <div class="flex justify-between items-center p-4 bg-zinc-800/40 rounded-2xl border border-white/5"><div class="flex items-center gap-3"><div class="w-3 h-3 bg-blue-500 rounded-full"></div><span class="text-sm font-bold text-white">Cartões</span></div><span id="closing-val-card" class="font-mono text-white">R$ 0,00</span></div>
+                    <div class="flex justify-between items-center p-4 bg-zinc-800/40 rounded-2xl border border-white/5"><div class="flex items-center gap-3"><div class="w-3 h-3 bg-amber-500 rounded-full"></div><span class="text-sm font-bold text-white">Dinheiro</span></div><span id="closing-val-cash" class="font-mono text-white">R$ 0,00</span></div>
+                </div>
+            </div>
+            <button onclick="closeShift()" class="mt-4 py-5 w-full rounded-full bg-red-500 text-white font-bold uppercase tracking-widest text-[10px] active:scale-95 shadow-[0_0_30px_rgba(239,68,68,0.3)]">Zerar e Encerrar Turno</button>
+        </div>
+
+        <div id="view-sales" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-20">
+            <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Histórico</h2><button onclick="resetApp()" class="text-white"><i data-lucide="x" stroke-width="1.5"></i></button></div>
+            <div class="flex-1 overflow-y-auto pr-2 custom-scroll space-y-3" id="sales-list"></div>
+            <div class="pt-6 mt-4 border-t border-zinc-700 flex justify-between items-end"><p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Acumulado</p><p id="sales-total" class="text-2xl font-bold text-white">R$ 0,00</p></div>
+        </div>
+
+        <div id="view-wifi" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-30"><div class="qr-wrapper mb-6"><div id="wifi-qr-box"></div></div><p id="wifi-ssid-val" class="text-white font-bold"></p><p id="wifi-pass-val" class="text-zinc-500 text-xs mb-8"></p><button onclick="resetApp()" class="px-8 py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest">VOLTAR</button></div>
+        
+        <div id="view-support" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-30"><div id="whatsapp-qr" class="qr-wrapper mb-8"></div><button onclick="resetApp()" class="px-8 py-4 rounded-full border border-zinc-800 text-white font-bold uppercase tracking-widest">FECHAR</button></div>
+
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyD3E7c_4jbnLJCGCapM5L8rta6AXVHvZgs", authDomain: "indisponivel-rrehfe.firebaseapp.com", databaseURL: "https://indisponivel-rrehfe.firebaseio.com", projectId: "indisponivel-rrehfe", storageBucket: "indisponivel-rrehfe.firebasestorage.app", messagingSenderId: "880210924564", appId: "1:880210924564:web:fd565cdb0e4f04cd7ac301" };
+    const safeAppId = 'terminal_pdv_principal';
+    
+    let db, auth;
+    let currentDigits = "";
+    let salesData = [];
+    let cartTotal = 0; 
+    let cartItems = [];
+    let cashReceivedDigits = "";
+    let transactionAmount = 0;
+    let unsubscribePayment = null; 
+    
+    const SECONDS_TO_RETURN = 60;
+    let inactivityTimerLeft = SECONDS_TO_RETURN;
+    let inactivityInterval = null;
+
+    let terminalConfig = {
+        terminalName: "CAIXA", pixKey: "pix@empresa.com.br", mpApiKey: "", theme: "dark", color: "#10b981", voice: "on", screensaver: "on", lastClosed: 0, kbType: "virtual", wifiSSID: "MinhaRede", wifiPass: "senha123", whatsapp: "5511999999999"
+    };
+
+    const initFirebase = async () => {
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app); auth = getAuth(app);
+        try { await signInAnonymously(auth); } catch (err) {}
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onValue(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) { terminalConfig = { ...terminalConfig, ...data }; updateUIFromConfig(); applyThemeSettings(); } 
+                    else { saveSettings(true); }
+                });
+                onValue(ref(db, `artifacts/${safeAppId}/public/data/sales`), (snapshot) => {
+                    salesData = [];
+                    snapshot.forEach(child => { salesData.push({ id: child.key, ...child.val() }); });
+                    salesData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    renderSales();
+                });
+                document.getElementById('status-dot').className = "w-1.5 h-1.5 bg-primary rounded-full"; 
+                document.getElementById('terminal-name-label').classList.replace('text-zinc-500', 'text-primary'); 
+            }
+        });
+    };
+
+    window.previewTheme = () => {
+        const theme = document.getElementById('input-theme').value;
+        const color = document.getElementById('input-color').value;
+        if (theme === 'dark') document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
+        document.documentElement.style.setProperty('--primary-color', color);
+    };
+    function applyThemeSettings() {
+        document.documentElement.style.setProperty('--primary-color', terminalConfig.color || '#10b981');
+        if (terminalConfig.theme === 'light') document.documentElement.classList.remove('dark'); else document.documentElement.classList.add('dark');
+    }
+    function formatCurrencyForSpeech(amount) {
+        const integerPart = Math.floor(amount);
+        const decimalPart = Math.round((amount - integerPart) * 100);
+        let speech = "";
+        if (integerPart > 0) speech += `${integerPart} ${integerPart === 1 ? 'real' : 'reais'}`;
+        if (decimalPart > 0) { if (integerPart > 0) speech += " e "; speech += `${decimalPart} ${decimalPart === 1 ? 'centavo' : 'centavos'}`; }
+        if (integerPart === 0 && decimalPart === 0) speech = "zero reais";
+        return speech;
+    }
+    function speak(text) {
+        if (terminalConfig.voice === "off" || !window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'pt-BR'; u.rate = 1.1;
+        window.speechSynthesis.speak(u);
+    }
+
+    window.pressKey = (key) => {
+        if (navigator.vibrate) navigator.vibrate(30);
+        if (key === 'back') currentDigits = currentDigits.slice(0, -1);
+        else if (key === 'enter') { handleAction(); return; } 
+        else {
+            if (key === '0' && currentDigits === "") return;
+            if (currentDigits.length < 8) currentDigits += key;
+        }
+        updateDisplay();
+    };
+    function updateDisplay() {
+        const val = currentDigits === "" ? 0 : parseInt(currentDigits);
+        document.getElementById('display-value').textContent = (val / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        const label = document.getElementById('instruction-label');
+        if(currentDigits.endsWith('01')) label.textContent = "ABRIR WI-FI";
+        else if(currentDigits.endsWith('02')) label.textContent = "SUPORTE";
+        else if(currentDigits.endsWith('03')) label.textContent = "AJUSTES";
+        else if(currentDigits.endsWith('04')) label.textContent = "HISTÓRICO";
+        else if(currentDigits.endsWith('05')) label.textContent = "FECHAR CAIXA";
+        else if(currentDigits.endsWith('09')) label.textContent = "CALCULADORA";
+        else label.textContent = "Valor";
+    }
+
+    function openCalculator(initialVal = 0) {
+        if (initialVal > 0) { cartTotal += initialVal; cartItems.push({ amount: initialVal, timestamp: Date.now() }); }
+        document.getElementById('view-calculator').classList.remove('hidden');
+        updateCartUI();
+    }
+    function updateCartUI() {
+        document.getElementById('calc-cart-total').textContent = cartTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const badge = document.getElementById('sum-badge');
+        const list = document.getElementById('cart-items-list');
+        list.innerHTML = "";
+        cartItems.forEach((item, i) => {
+            list.innerHTML += `<div class="flex justify-between items-center bg-zinc-800/40 p-4 rounded-2xl border border-white/5"><span class="text-xs text-zinc-500">Item #${i+1}</span><span class="font-bold text-white">R$ ${item.amount.toFixed(2)}</span></div>`;
+        });
+        if (cartTotal > 0) { badge.style.opacity = "1"; document.getElementById('sum-label').textContent = `Total Carrinho: ` + cartTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); } else badge.style.opacity = "0";
+    }
+    window.clearSum = () => { cartTotal = 0; cartItems = []; updateCartUI(); showMessage("Carrinho limpo", true); };
+    window.handleActionFromCalc = () => { if (cartTotal <= 0) return; transactionAmount = cartTotal; document.getElementById('view-calculator').classList.add('hidden'); showPaymentMethods(); }
+
+    function handleAction() {
+        const val = currentDigits === "" ? 0 : parseInt(currentDigits);
+        const cents = val % 100;
+        const amountFloat = val / 100;
+        if (val > 0 && amountFloat < 10) {
+            if (cents === 1) { showWifi(); return; }
+            if (cents === 2) { showSupport(); return; }
+            if (cents === 3) { toggleSettings(); currentDigits = ""; updateDisplay(); return; }
+            if (cents === 4) { showSalesHistory(); return; }
+            if (cents === 5) { showClosing(); return; }
+            if (cents === 9) { openCalculator((val - 9) / 100); currentDigits = ""; updateDisplay(); return; }
+        }
+        if (amountFloat <= 0 && cartTotal <= 0) return;
+        transactionAmount = cartTotal > 0 ? cartTotal : amountFloat;
+        showPaymentMethods();
+    }
+
+    window.showPaymentMethods = () => {
+        document.querySelectorAll('.view-overlay').forEach(v => v.classList.add('hidden'));
+        document.getElementById('view-pay-methods').classList.remove('hidden');
+        document.getElementById('methods-amount-label').textContent = transactionAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        speak(`Total de ${formatCurrencyForSpeech(transactionAmount)}. Selecione o método de pagamento.`);
+    };
+    window.startPix = () => { document.getElementById('view-pay-methods').classList.add('hidden'); processSalePIX(transactionAmount); };
+    window.startCard = () => { document.getElementById('view-pay-methods').classList.add('hidden'); document.getElementById('view-card-type').classList.remove('hidden'); };
+    window.confirmCard = (type) => { registerSale(transactionAmount, `Cartão (${type})`); };
+    window.startCash = () => { document.getElementById('view-pay-methods').classList.add('hidden'); document.getElementById('view-cash-input').classList.remove('hidden'); document.getElementById('cash-total-label').textContent = transactionAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); cashReceivedDigits = ""; updateCashDisplay(); };
+    window.cashKey = (key) => { if (key === 'back') cashReceivedDigits = cashReceivedDigits.slice(0, -1); else cashReceivedDigits += key; updateCashDisplay(); };
+    function updateCashDisplay() {
+        const val = cashReceivedDigits === "" ? 0 : parseInt(cashReceivedDigits) / 100;
+        document.getElementById('cash-received-display').textContent = val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        const troco = val - transactionAmount;
+        if (troco >= 0) { document.getElementById('change-panel').classList.remove('hidden'); document.getElementById('change-amount-display').textContent = troco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); } else document.getElementById('change-panel').classList.add('hidden');
+    }
+    window.confirmCash = () => { registerSale(transactionAmount, "Dinheiro"); };
+
+    async function processSalePIX(amount) {
+        document.getElementById('view-pix').classList.remove('hidden');
+        document.getElementById('pix-amount-label').textContent = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const txId = "TX_" + Date.now();
+        const txRef = ref(db, `artifacts/${safeAppId}/public/data/transactions/${txId}`);
+        set(txRef, { status: 'pendente', amount: amount });
+        unsubscribePayment = onValue(txRef, (snapshot) => { if (snapshot.val()?.status === 'pago') registerSale(amount, "PIX"); });
+        document.getElementById('pix-qr-box').innerHTML = "";
+        new QRCode(document.getElementById('pix-qr-box'), { text: "00020101021126580014BR.GOV.BCB.PIX0136"+(terminalConfig.pixKey)+"52040000530398654"+amount.toFixed(2).length.toString().padStart(2,'0')+amount.toFixed(2)+"5802BR5903PDV6009SAO PAULO62070503***6304", width: 350, height: 350 });
+    }
+    function registerSale(amount, method) {
+        push(ref(db, `artifacts/${safeAppId}/public/data/sales`), { amount: amount, timestamp: new Date().toISOString(), method: method });
+        speak("Pagamento recebido!");
+        document.querySelectorAll('.view-overlay').forEach(v => v.classList.add('hidden'));
+        document.getElementById('view-success').classList.remove('hidden');
+        document.getElementById('success-method-label').textContent = method;
+        cartTotal = 0; cartItems = []; updateCartUI();
+        setTimeout(resetApp, 4000);
+    }
+
+    function renderSales() {
+        const list = document.getElementById('sales-list');
+        list.innerHTML = ""; let t = 0;
+        salesData.forEach(s => {
+            t += s.amount;
+            list.innerHTML += `<div class="bg-zinc-800/40 p-4 rounded-2xl border border-white/5 flex justify-between"><div><p class="text-[9px] text-zinc-500 uppercase">${new Date(s.timestamp).toLocaleString()}</p><p class="text-xs text-white">${s.method}</p></div><span class="text-white font-bold">R$ ${s.amount.toFixed(2)}</span></div>`;
+        });
+        document.getElementById('sales-total').textContent = t.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    }
+    function showSalesHistory() { document.getElementById('view-sales').classList.remove('hidden'); renderSales(); currentDigits = ""; updateDisplay(); }
+    function showClosing() { document.getElementById('view-closing').classList.remove('hidden'); let t = 0; salesData.forEach(s => { if(new Date(s.timestamp).getTime() > terminalConfig.lastClosed) t += s.amount; }); document.getElementById('closing-total').textContent = t.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); document.getElementById('bar-pix').style.width = "100%"; }
+    window.closeShift = () => { set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main/lastClosed`), Date.now()); showMessage("Turno encerrado", true); setTimeout(resetApp, 2000); };
+
+    window.resetApp = () => { if(unsubscribePayment) unsubscribePayment(); document.querySelectorAll('.view-overlay').forEach(v => v.classList.add('hidden')); currentDigits = ""; cashReceivedDigits = ""; updateDisplay(); };
+    window.toggleSettings = () => {
+        const v = document.getElementById('view-settings');
+        if(v.classList.contains('hidden')) {
+            document.getElementById('input-terminal-name').value = terminalConfig.terminalName || "";
+            document.getElementById('input-api-key').value = terminalConfig.mpApiKey || "";
+            document.getElementById('input-pix-key').value = terminalConfig.pixKey || "";
+            document.getElementById('input-kb-type').value = terminalConfig.kbType || "virtual";
+            document.getElementById('input-wifi-ssid').value = terminalConfig.wifiSSID || "";
+            document.getElementById('input-wifi-pass').value = terminalConfig.wifiPass || "";
+            document.getElementById('input-whatsapp').value = terminalConfig.whatsapp || "";
+            document.getElementById('input-theme').value = terminalConfig.theme || "dark";
+            document.getElementById('input-color').value = terminalConfig.color || "#10b981";
+            v.classList.remove('hidden');
+        } else v.classList.add('hidden');
+    };
+    
+    window.saveSettings = async (isInit = false) => {
+        const cfg = isInit ? terminalConfig : { 
+            ...terminalConfig, 
+            terminalName: document.getElementById('input-terminal-name').value, 
+            mpApiKey: document.getElementById('input-api-key').value, 
+            pixKey: document.getElementById('input-pix-key').value,
+            kbType: document.getElementById('input-kb-type').value,
+            wifiSSID: document.getElementById('input-wifi-ssid').value,
+            wifiPass: document.getElementById('input-wifi-pass').value,
+            whatsapp: document.getElementById('input-whatsapp').value,
+            theme: document.getElementById('input-theme').value,
+            color: document.getElementById('input-color').value
+        };
+        if (db && auth.currentUser) {
+            await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), cfg);
+            if(!isInit) { showMessage("Ajustes salvos", true); toggleSettings(); updateUIFromConfig(); }
+        }
+    };
+    function updateUIFromConfig() { 
+        document.getElementById('terminal-name-label').textContent = terminalConfig.terminalName || "OFFLINE"; 
+        document.getElementById('virtual-keypad').style.display = (terminalConfig.kbType === 'fisico') ? 'none' : 'grid';
+    }
+    function showMessage(t, s) { const b = document.getElementById('message-box'); document.getElementById('message-text').textContent = t; b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2500); }
+    function showWifi() { document.getElementById('view-wifi').classList.remove('hidden'); document.getElementById('wifi-ssid-val').textContent = terminalConfig.wifiSSID; document.getElementById('wifi-pass-val').textContent = terminalConfig.wifiPass; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${terminalConfig.wifiSSID};P:${terminalConfig.wifiPass};;`, width: 350, height: 350 }); }
+    function showSupport() { document.getElementById('view-support').classList.remove('hidden'); document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${terminalConfig.whatsapp}`, width: 350, height: 350 }); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        resetActivity();
+        const vMethods = !document.getElementById('view-pay-methods').classList.contains('hidden');
+        const vCardType = !document.getElementById('view-card-type').classList.contains('hidden');
+        const vCash = !document.getElementById('view-cash-input').classList.contains('hidden');
+        const vMain = document.querySelectorAll('.view-overlay.hidden').length === document.querySelectorAll('.view-overlay').length;
+        if (e.key === '0') {
+            if (vMain) { pressKey('0'); return; }
+            if (vCash) { cashKey('0'); return; }
+            if (vMethods) { resetApp(); return; }
+            if (vCardType || vCash || !document.getElementById('view-pix').classList.contains('hidden')) { showPaymentMethods(); return; }
+            resetApp(); return;
+        }
+        if (vMethods) { if (e.key === '1') startPix(); if (e.key === '2') startCard(); if (e.key === '3') startCash(); return; }
+        if (vCardType) { if (e.key === '1') confirmCard('Crédito'); if (e.key === '2') confirmCard('Débito'); return; }
+        if (e.key === 'Escape') resetApp();
+        if (e.key === 'Enter') { if (vCash) confirmCash(); else if (vMain) handleAction(); return; }
+        if (e.key === 'Backspace') { if (vCash) cashKey('back'); else pressKey('back'); return; }
+        if (e.key >= '1' && e.key <= '9') { if (vCash) cashKey(e.key); else if (vMain) pressKey(e.key); }
+    });
+
+    function startInactivityTimer() { if(inactivityInterval) clearInterval(inactivityInterval); inactivityInterval = setInterval(() => { inactivityTimerLeft--; if (inactivityTimerLeft <= 0) document.getElementById('screensaver').classList.add('active'); }, 1000); }
+    window.resetActivity = () => { inactivityTimerLeft = SECONDS_TO_RETURN; document.getElementById('screensaver').classList.remove('active'); };
+    ['click','touchstart','mousedown'].forEach(e => window.addEventListener(e, resetActivity));
+
+    setInterval(() => {
+        const d = new Date();
+        const s = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0') + ":" + d.getSeconds().toString().padStart(2,'0');
+        document.getElementById('clock').textContent = s;
+        document.getElementById('ss-clock').textContent = s.slice(0,5);
+    }, 1000);
+    window.addEventListener('load', () => { lucide.createIcons(); initFirebase(); startInactivityTimer(); });
+</script>
+</body>
+</html>
