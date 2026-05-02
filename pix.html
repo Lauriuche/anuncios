@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMyIi8+PC9zdmc+">
     
-    <title>Terminal PDV PIX • Codificação Elite</title>
+    <title>Terminal PDV PIX • Pro Elite</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -85,10 +85,6 @@
         .view-overlay { background: var(--bg-color); z-index: 20; position: absolute; inset: 0; }
         .custom-scroll::-webkit-scrollbar { width: 0px; }
 
-        /* Estilos da Lista de Codificação */
-        .shortcut-item { animation: slideIn 0.3s ease-out; margin-bottom: 12px; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-        
         .shortcut-view-mode {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.05);
@@ -100,16 +96,8 @@
             align-items: center;
             justify-content: space-between;
         }
-        .shortcut-view-mode:hover {
-            background: rgba(255,255,255,0.06);
-            border-color: var(--primary-color);
-        }
-        .shortcut-edit-mode {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--primary-color);
-            padding: 16px;
-            border-radius: 20px;
-        }
+        .shortcut-view-mode:hover { background: rgba(255,255,255,0.06); border-color: var(--primary-color); }
+        .shortcut-edit-mode { background: rgba(255,255,255,0.05); border: 1px solid var(--primary-color); padding: 16px; border-radius: 20px; }
 
         .cart-list-main { max-height: 140px; overflow-y: auto; width: 100%; text-align: center; margin-bottom: 15px; }
         .item-row { animation: itemEntry 0.4s ease-out forwards; }
@@ -126,14 +114,6 @@
     <div id="message-box" class="absolute top-10 left-1/2 -translate-x-1/2 bg-zinc-800 border border-zinc-700 text-white px-5 py-3 rounded-full text-xs font-medium flex items-center gap-3 shadow-2xl transition-all opacity-0 pointer-events-none z-[100]">
         <div id="msg-dot" class="w-1.5 h-1.5 bg-primary rounded-full"></div>
         <span id="message-text">Processando</span>
-    </div>
-
-    <!-- Screensaver -->
-    <div id="screensaver" class="absolute inset-0 flex-col items-center justify-center cursor-pointer" onclick="resetActivity()">
-        <div class="animate-pulse opacity-20 text-center">
-            <i data-lucide="zap" size="64" class="text-primary mx-auto mb-4"></i>
-            <p id="ss-clock" class="text-4xl font-light tracking-[0.3em]">00:00</p>
-        </div>
     </div>
 
     <!-- Status Bar -->
@@ -173,8 +153,8 @@
                     <span id="display-value" class="text-[9rem] font-bold tracking-tighter leading-none transition-all duration-300">0</span>
                 </div>
                 
-                <div id="back-hint" class="mt-4 text-[9px] font-bold tracking-widest uppercase opacity-0 transition-opacity text-zinc-500">
-                    Apagar para Voltar
+                <div id="back-hint" class="mt-4 text-[9px] font-bold tracking-widest uppercase opacity-0 transition-all text-zinc-500">
+                    <!-- Dinâmico via JS -->
                 </div>
             </div>
 
@@ -212,16 +192,15 @@
                         <i data-lucide="copy" size="14"></i> Copiar Código PIX
                     </button>
                 </div>
-                <button onclick="resetApp()" class="text-zinc-500 text-[9px] font-bold uppercase tracking-widest p-4">Cancelar Operação</button>
+                <button onclick="resetApp()" class="text-zinc-500 text-[9px] font-bold uppercase tracking-widest p-4 underline">Cancelar Operação</button>
             </div>
         </div>
 
-        <!-- AJUSTES (MODIFICADO: LISTA PARA EDITAR) -->
+        <!-- AJUSTES -->
         <div id="view-settings" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-50">
             <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Configurações</h2><button onclick="toggleSettings()" class="text-white"><i data-lucide="x" size="24"></i></button></div>
             <div class="space-y-8 flex-1 overflow-y-auto pr-2 custom-scroll pb-10 text-left">
                 
-                <!-- 1. TEMAS -->
                 <div>
                     <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-4 border-b border-zinc-700 pb-1">Personalização Visual</p>
                     <div class="grid grid-cols-2 gap-4">
@@ -247,7 +226,6 @@
                     </div>
                 </div>
 
-                <!-- 2. INVENTÁRIO CODIFICAÇÃO (CLICÁVEL) -->
                 <div>
                     <div class="flex items-center justify-between mb-4 border-b border-zinc-700 pb-2">
                         <div class="flex flex-col">
@@ -256,12 +234,9 @@
                         </div>
                         <button onclick="addShortcutUI()" class="bg-primary/20 text-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Novo Cód +</button>
                     </div>
-                    <div id="shortcuts-config-list" class="space-y-3 mb-6">
-                        <!-- Itens renderizados via JS -->
-                    </div>
+                    <div id="shortcuts-config-list" class="space-y-3 mb-6"></div>
                 </div>
 
-                <!-- 3. SISTEMA -->
                 <div class="space-y-6">
                     <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-2 border-b border-zinc-700 pb-1">Definições Internas</p>
                     <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Nome do Caixa</label><input type="text" id="input-terminal-name" class="minimal-input"></div>
@@ -314,8 +289,7 @@
     let unsubscribePayment = null, pdvMode = 'COMMAND'; 
 
     let terminalConfig = {
-        terminalName: "CAIXA", pixKey: "", mpApiKey: "", theme: "dark", color: "#10b981", bgColor: "#18181b", voice: "on", lastClosed: 0, kbType: "virtual", whatsapp: "", wifiSSID: "", wifiPass: "", dailyGoal: 1000, 
-        shortcuts: {} 
+        terminalName: "CAIXA", pixKey: "", mpApiKey: "", theme: "dark", color: "#10b981", bgColor: "#18181b", voice: "on", lastClosed: 0, kbType: "virtual", whatsapp: "", wifiSSID: "", wifiPass: "", dailyGoal: 1000, shortcuts: {} 
     };
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -378,38 +352,73 @@
         });
     }
 
+    function speak(text) { if (terminalConfig.voice === "off" || !window.speechSynthesis) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'pt-BR'; u.rate = 1.1; window.speechSynthesis.speak(u); }
+
     window.pressKey = (key) => {
         playBeep(600, 0.04, 0.05); if (navigator.vibrate) navigator.vibrate(20);
+        
         if (key === 'back') { 
-            if (pdvMode === 'PAYMENT' && currentDigits === "") { resetApp(); return; }
+            // CANCELAMENTO INTELIGENTE
+            if (currentDigits === "") {
+                if (pdvMode === 'PAYMENT') {
+                    // Se entrou no modo manual sem querer, volta pro código
+                    resetApp();
+                    showMessage("Manual Cancelado");
+                    return;
+                }
+                if (pdvMode === 'COMMAND' && cartTotal > 0) {
+                    // Se tem itens no carrinho e apagou, limpa tudo (desistir da venda)
+                    resetApp();
+                    showMessage("Venda Cancelada");
+                    return;
+                }
+            }
             currentDigits = currentDigits.slice(0, -1); 
         } 
         else if (key === 'enter') { handleAction(); return; } 
         else {
             if (pdvMode === 'COMMAND') { if (currentDigits.length < 3) currentDigits += key; } 
-            else { if (key === '0' && currentDigits === "") { resetApp(); return; } if (currentDigits.length < 8) currentDigits += key; }
+            else { 
+                if (key === '0' && currentDigits === "") { resetApp(); return; }
+                if (currentDigits.length < 8) currentDigits += key; 
+            }
         }
         updateDisplay();
     };
 
     function updateDisplay() {
         const valBox = document.getElementById('display-value'), currencyBox = document.getElementById('display-currency'), label = document.getElementById('instruction-label'), hint = document.getElementById('back-hint');
+        
         if (pdvMode === 'COMMAND') {
             document.getElementById('app-body').classList.remove('mode-payment'); currencyBox.classList.add('hidden');
             valBox.textContent = currentDigits || "0"; valBox.className = "text-[9rem] font-bold tracking-tighter text-white transition-all";
-            const c = currentDigits; hint.style.opacity = "0";
+            const c = currentDigits;
+            
             if (terminalConfig.shortcuts && terminalConfig.shortcuts[c]) {
                 const s = terminalConfig.shortcuts[c];
                 label.textContent = (s.type === 'venda') ? `ADD: ${s.desc.toUpperCase()}` : `RUN: ${s.desc.toUpperCase()}`;
                 valBox.classList.add('text-primary');
-            } else if (c === '' || c === '0') { label.textContent = cartTotal > 0 ? "0 + ENTER PARA FINALIZAR" : "ENTER PARA VENDA MANUAL"; }
-            else label.textContent = "DIGITE UM CÓDIGO";
+            } else if (c === '' || c === '0') {
+                label.textContent = cartTotal > 0 ? "0 + ENTER PARA FINALIZAR" : "ENTER PARA VENDA MANUAL";
+            } else label.textContent = "DIGITE UM CÓDIGO";
+
+            // Mostrar hint de cancelar se houver carrinho
+            if (cartTotal > 0 && currentDigits === "") {
+                hint.textContent = "Apagar p/ Cancelar Venda";
+                hint.style.opacity = "1";
+            } else { hint.style.opacity = "0"; }
+
         } else {
             document.getElementById('app-body').classList.add('mode-payment'); currencyBox.classList.remove('hidden');
             const val = currentDigits === "" ? 0 : parseInt(currentDigits);
             valBox.textContent = (val / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             valBox.className = "text-[7.5rem] font-black tracking-tighter text-primary";
-            label.textContent = "VALOR MANUAL"; hint.style.opacity = (currentDigits === "") ? "1" : "0";
+            label.textContent = "VALOR MANUAL";
+            
+            if (currentDigits === "") {
+                hint.textContent = "Apagar p/ Voltar";
+                hint.style.opacity = "1";
+            } else { hint.style.opacity = "0"; }
         }
     }
 
@@ -429,8 +438,10 @@
                     return;
                 }
             }
-            if (code === '0') { if (cartTotal > 0) { processSalePIX(cartTotal); } else { pdvMode = 'PAYMENT'; playBeep(880, 0.1); } }
-            else playBeep(150, 0.2); updateDisplay();
+            if (code === '0') { 
+                if (cartTotal > 0) { processSalePIX(cartTotal); } 
+                else { pdvMode = 'PAYMENT'; playBeep(880, 0.1); } 
+            } else playBeep(150, 0.2); updateDisplay();
         } else {
             const val = currentDigits === "" ? 0 : parseInt(currentDigits);
             if (val <= 0) return;
@@ -472,20 +483,13 @@
         cartTotal = 0; cartItems = []; updateCartUI(); setTimeout(resetApp, 3000);
     }
 
-    // --- LÓGICA DE INVENTÁRIO (MODO LISTA + EDIÇÃO) ---
-    
-    window.addShortcutUI = () => {
-        const id = Date.now();
-        // Adiciona direto no modo edição para um novo item
-        renderShortcutRow(id, null, true);
-    };
+    // --- LOGICA DE INVENTÁRIO (MODO LISTA + EDIÇÃO) ---
+    window.addShortcutUI = () => { renderShortcutRow(Date.now(), null, true); };
 
     function renderShortcutRow(id, s, isEdit) {
         const container = document.getElementById('shortcuts-config-list');
         let html = '';
-
         if (isEdit) {
-            // MODO EDIÇÃO (INPUTS)
             html = `
             <div class="shortcut-item shortcut-edit-mode" id="sc-${id}" data-editing="true">
                 <div class="grid grid-cols-7 gap-2 items-center mb-3">
@@ -499,16 +503,11 @@
                 </div>
                 <div id="fields-${id}" class="grid grid-cols-1 gap-2 bg-white/5 p-3 rounded-xl"></div>
             </div>`;
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
+            const tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
             const existingItem = document.getElementById(`sc-${id}`);
-            if (existingItem) container.replaceChild(tempDiv.firstElementChild, existingItem);
-            else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
-            
+            if (existingItem) container.replaceChild(tempDiv.firstElementChild, existingItem); else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
             updateShortcutFields(id, s);
         } else {
-            // MODO VISUALIZAÇÃO (CARD CLICÁVEL)
             const typeLabel = s.type === 'venda' ? `R$ ${parseFloat(s.value).toFixed(2)}` : (s.funcType || 'Função').toUpperCase();
             html = `
             <div class="shortcut-item shortcut-view-mode" id="sc-${id}" onclick="switchShortcutToEdit('${id}', ${JSON.stringify(s).replace(/"/g, '&quot;')})">
@@ -520,46 +519,27 @@
                     </div>
                 </div>
                 <div class="text-[10px] font-black text-primary/80 bg-primary/5 px-3 py-1 rounded-md border border-primary/10">${typeLabel}</div>
-                <input type="hidden" data-key="trigger" value="${s.trigger}">
-                <input type="hidden" data-key="type" value="${s.type}">
-                <input type="hidden" data-key="desc" value="${s.desc}">
+                <input type="hidden" data-key="trigger" value="${s.trigger}"><input type="hidden" data-key="type" value="${s.type}"><input type="hidden" data-key="desc" value="${s.desc}">
                 <div class="hidden" id="fields-${id}"></div>
             </div>`;
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
+            const tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
             const existingItem = document.getElementById(`sc-${id}`);
-            if (existingItem) container.replaceChild(tempDiv.firstElementChild, existingItem);
-            else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
-
-            // Armazena dados extras ocultos para o saveSettings funcionar mesmo em modo visualização
+            if (existingItem) container.replaceChild(tempDiv.firstElementChild, existingItem); else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
             const hiddenFields = document.getElementById(`fields-${id}`);
-            if (s.type === 'venda') {
-                hiddenFields.innerHTML = `<input type="hidden" data-key="value" value="${s.value}">`;
-            } else {
-                hiddenFields.innerHTML = `
-                    <input type="hidden" data-key="funcType" value="${s.funcType}">
-                    <input type="hidden" data-key="ssid" value="${s.ssid || ''}">
-                    <input type="hidden" data-key="pass" value="${s.pass || ''}">
-                    <input type="hidden" data-key="whatsapp" value="${s.whatsapp || ''}">`;
-            }
+            if (s.type === 'venda') { hiddenFields.innerHTML = `<input type="hidden" data-key="value" value="${s.value}">`; }
+            else { hiddenFields.innerHTML = `<input type="hidden" data-key="funcType" value="${s.funcType}"><input type="hidden" data-key="ssid" value="${s.ssid || ''}"><input type="hidden" data-key="pass" value="${s.pass || ''}"><input type="hidden" data-key="whatsapp" value="${s.whatsapp || ''}">`; }
         }
         lucide.createIcons();
     }
 
-    window.switchShortcutToEdit = (id, data) => {
-        renderShortcutRow(id, { ...data, trigger: data.trigger }, true);
-    };
+    window.switchShortcutToEdit = (id, data) => { renderShortcutRow(id, { ...data, trigger: data.trigger }, true); };
 
     window.updateShortcutFields = (id, existing = null) => {
         const container = document.getElementById(`fields-${id}`);
         const type = document.querySelector(`#sc-${id} [data-key="type"]`).value;
-        if (!container) return;
-        container.innerHTML = "";
-        
-        if (type === 'venda') {
-            container.innerHTML = `<input type="number" placeholder="VALOR R$" class="minimal-input" data-key="value" value="${existing?.value || ''}">`;
-        } else {
+        if (!container) return; container.innerHTML = "";
+        if (type === 'venda') { container.innerHTML = `<input type="number" placeholder="VALOR R$" class="minimal-input" data-key="value" value="${existing?.value || ''}">`; }
+        else {
             container.innerHTML = `
                 <select class="minimal-input text-[10px] mb-2" data-key="funcType" onchange="updateFunctionSubFields('${id}')">
                     <option value="">Escolha a Função...</option>
@@ -567,28 +547,21 @@
                     <option value="contato" ${existing?.funcType === 'contato' ? 'selected' : ''}>Contacto (WhatsApp)</option>
                     <option value="config" ${existing?.funcType === 'config' ? 'selected' : ''}>Abrir Configurações</option>
                     <option value="caixa" ${existing?.funcType === 'caixa' ? 'selected' : ''}>Abrir Caixa/Vendas</option>
-                </select>
-                <div id="subfields-${id}" class="space-y-2"></div>`;
+                </select><div id="subfields-${id}" class="space-y-2"></div>`;
             updateFunctionSubFields(id, existing);
         }
     };
 
     window.updateFunctionSubFields = (id, existing = null) => {
-        const sub = document.getElementById(`subfields-${id}`);
-        if (!sub) return;
+        const sub = document.getElementById(`subfields-${id}`); if (!sub) return;
         const func = document.querySelector(`#sc-${id} [data-key="funcType"]`).value;
         sub.innerHTML = "";
-        if (func === 'wifi') {
-            sub.innerHTML = `<input type="text" placeholder="NOME DA REDE (SSID)" class="minimal-input text-[10px]" data-key="ssid" value="${existing?.ssid || ''}">
-                             <input type="text" placeholder="SENHA WI-FI" class="minimal-input text-[10px]" data-key="pass" value="${existing?.pass || ''}">`;
-        } else if (func === 'contato') {
-            sub.innerHTML = `<input type="text" placeholder="WHATSAPP (Ex: 5511...)" class="minimal-input text-[10px]" data-key="whatsapp" value="${existing?.whatsapp || ''}">`;
-        }
+        if (func === 'wifi') { sub.innerHTML = `<input type="text" placeholder="SSID" class="minimal-input text-[10px]" data-key="ssid" value="${existing?.ssid || ''}"><input type="text" placeholder="SENHA" class="minimal-input text-[10px]" data-key="pass" value="${existing?.pass || ''}">`; }
+        else if (func === 'contato') { sub.innerHTML = `<input type="text" placeholder="WHATSAPP" class="minimal-input text-[10px]" data-key="whatsapp" value="${existing?.whatsapp || ''}">`; }
     };
 
     function renderShortcutsConfig() {
-        const list = document.getElementById('shortcuts-config-list'); 
-        list.innerHTML = "";
+        const list = document.getElementById('shortcuts-config-list'); list.innerHTML = "";
         Object.entries(terminalConfig.shortcuts || {}).forEach(([trigger, s]) => {
             const id = Math.random().toString(36).substr(2, 9);
             renderShortcutRow(id, { ...s, trigger }, false);
@@ -607,18 +580,11 @@
         const v = document.getElementById('view-settings');
         if(v.classList.contains('hidden')) {
             const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ""; };
-            setVal('input-terminal-name', terminalConfig.terminalName);
-            setVal('input-daily-goal', terminalConfig.dailyGoal);
-            setVal('input-pix-key', terminalConfig.pixKey);
-            setVal('input-api-key', terminalConfig.mpApiKey);
-            setVal('input-whatsapp', terminalConfig.whatsapp);
-            setVal('input-wifi-ssid', terminalConfig.wifiSSID);
-            setVal('input-wifi-pass', terminalConfig.wifiPass);
+            setVal('input-terminal-name', terminalConfig.terminalName); setVal('input-daily-goal', terminalConfig.dailyGoal);
+            setVal('input-pix-key', terminalConfig.pixKey); setVal('input-api-key', terminalConfig.mpApiKey);
+            setVal('input-whatsapp', terminalConfig.whatsapp); setVal('input-wifi-ssid', terminalConfig.wifiSSID); setVal('input-wifi-pass', terminalConfig.wifiPass);
             const setSelect = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
-            setSelect('input-theme', terminalConfig.theme);
-            setSelect('input-color', terminalConfig.color);
-            setSelect('input-bg', terminalConfig.bgColor);
-            setSelect('input-kb-type', terminalConfig.kbType);
+            setSelect('input-bg', terminalConfig.bgColor); setSelect('input-color', terminalConfig.color); setSelect('input-kb-type', terminalConfig.kbType);
             renderShortcutsConfig(); v.classList.remove('hidden');
         } else v.classList.add('hidden');
     };
@@ -641,21 +607,12 @@
             }
         });
         const getVal = (id) => document.getElementById(id)?.value || "";
-        const cfg = { ...terminalConfig, terminalName: getVal('input-terminal-name'), dailyGoal: parseFloat(getVal('input-daily-goal')) || 0, pixKey: getVal('input-pix-key'), mpApiKey: getVal('input-api-key'), whatsapp: getVal('input-whatsapp'), wifiSSID: getVal('input-wifi-ssid'), wifiPass: getVal('input-wifi-pass'), theme: getVal('input-theme'), color: getVal('input-color'), bgColor: getVal('input-bg'), kbType: getVal('input-kb-type'), shortcuts: shortcuts };
+        const cfg = { ...terminalConfig, terminalName: getVal('input-terminal-name'), dailyGoal: parseFloat(getVal('input-daily-goal')) || 0, pixKey: getVal('input-pix-key'), mpApiKey: getVal('input-api-key'), whatsapp: getVal('input-whatsapp'), wifiSSID: getVal('input-wifi-ssid'), wifiPass: getVal('input-wifi-pass'), color: getVal('input-color'), bgColor: getVal('input-bg'), kbType: getVal('input-kb-type'), shortcuts: shortcuts };
         if (db && auth.currentUser) { await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), cfg); resetApp(); }
     };
 
-    function updateUIFromConfig() { 
-        document.getElementById('terminal-name-label').textContent = terminalConfig.terminalName || "OFFLINE"; 
-        const keypad = document.getElementById('virtual-keypad');
-        if (keypad) keypad.style.display = (terminalConfig.kbType === 'fisico') ? 'none' : 'grid';
-    }
-
-    function showMessage(t) { 
-        const b = document.getElementById('message-box'); 
-        document.getElementById('message-text').textContent = t; 
-        b.style.opacity = "1"; setTimeout(() => b.style.opacity = "0", 2500); 
-    }
+    function updateUIFromConfig() { document.getElementById('terminal-name-label').textContent = terminalConfig.terminalName || "OFFLINE"; const keypad = document.getElementById('virtual-keypad'); if (keypad) keypad.style.display = (terminalConfig.kbType === 'fisico') ? 'none' : 'grid'; }
+    function showMessage(t) { const b = document.getElementById('message-box'); document.getElementById('message-text').textContent = t; b.style.opacity = "1"; setTimeout(() => b.style.opacity = "0", 2500); }
     
     function showWifi(ssid, pass) { document.getElementById('view-wifi').classList.remove('hidden'); document.getElementById('wifi-ssid-val').textContent = ssid || "Rede"; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${ssid};P:${pass};;`, width: 350, height: 350 }); }
     function showSupport(num) { document.getElementById('view-support').classList.remove('hidden'); document.getElementById('whatsapp-num-val').textContent = num || ""; document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${num}`, width: 350, height: 350 }); }
