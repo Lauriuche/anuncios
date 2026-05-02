@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMyIi8+PC9zdmc+">
     
-    <title>Terminal PDV PIX • Pro Elite</title>
+    <title>Terminal PDV PIX • Codificação Elite</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -74,30 +74,55 @@
         .qr-wrapper { 
             background: #ffffff; padding: 20px; border-radius: 28px; display: inline-block; 
             box-shadow: 0 20px 50px rgba(0,0,0,0.4); transform: scale(0.9); 
-            animation: qrEntry 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            animation: qrEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
         }
         @keyframes qrEntry { to { transform: scale(1); opacity: 1; } }
 
         .minimal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0; font-size: 1rem; outline: none; transition: all 0.3s; color: white; }
         .minimal-input:focus { border-bottom-color: var(--primary-color); }
+        select.minimal-input option { background-color: #18181b; color: white; }
 
         .view-overlay { background: var(--bg-color); z-index: 20; position: absolute; inset: 0; }
         .custom-scroll::-webkit-scrollbar { width: 0px; }
 
+        /* Estilos da Lista de Codificação */
+        .shortcut-item { animation: slideIn 0.3s ease-out; margin-bottom: 12px; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .shortcut-view-mode {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .shortcut-view-mode:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: var(--primary-color);
+        }
+        .shortcut-edit-mode {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--primary-color);
+            padding: 16px;
+            border-radius: 20px;
+        }
+
+        .cart-list-main { max-height: 140px; overflow-y: auto; width: 100%; text-align: center; margin-bottom: 15px; }
         .item-row { animation: itemEntry 0.4s ease-out forwards; }
         @keyframes itemEntry { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         #screensaver { background-color: #000000; z-index: 1000; display: none; opacity: 0; transition: opacity 1s; }
         #screensaver.active { display: flex; opacity: 1; }
-        
-        .shortcut-item { animation: slideIn 0.3s ease-out; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body class="md:p-6" id="app-body">
 
 <div class="terminal-container">
-    <!-- Feedback Toast -->
+    <!-- Feedback Box -->
     <div id="message-box" class="absolute top-10 left-1/2 -translate-x-1/2 bg-zinc-800 border border-zinc-700 text-white px-5 py-3 rounded-full text-xs font-medium flex items-center gap-3 shadow-2xl transition-all opacity-0 pointer-events-none z-[100]">
         <div id="msg-dot" class="w-1.5 h-1.5 bg-primary rounded-full"></div>
         <span id="message-text">Processando</span>
@@ -133,10 +158,8 @@
         <div id="view-main" class="flex-1 flex flex-col p-6 view-transition">
             
             <div class="flex-1 flex flex-col items-center justify-center relative">
-                <!-- Lista de itens do carrinho -->
                 <div class="cart-list-main custom-scroll px-6 space-y-2" id="main-cart-list"></div>
 
-                <!-- Badge de Total -->
                 <div id="main-total-badge" class="mb-4 opacity-0 transition-all scale-90">
                     <div class="bg-primary/20 text-primary border border-primary/20 px-6 py-2 rounded-full text-[13px] font-black tracking-widest uppercase">
                         TOTAL: R$ <span id="main-cart-total-val">0,00</span>
@@ -148,6 +171,10 @@
                 <div class="flex items-baseline justify-center w-full px-4">
                     <span id="display-currency" class="hidden text-2xl font-light text-zinc-500 mr-2">R$</span>
                     <span id="display-value" class="text-[9rem] font-bold tracking-tighter leading-none transition-all duration-300">0</span>
+                </div>
+                
+                <div id="back-hint" class="mt-4 text-[9px] font-bold tracking-widest uppercase opacity-0 transition-opacity text-zinc-500">
+                    Apagar para Voltar
                 </div>
             </div>
 
@@ -189,7 +216,7 @@
             </div>
         </div>
 
-        <!-- AJUSTES (COMPLETO) -->
+        <!-- AJUSTES (MODIFICADO: LISTA PARA EDITAR) -->
         <div id="view-settings" class="hidden absolute inset-0 view-overlay flex flex-col p-8 view-transition z-50">
             <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Configurações</h2><button onclick="toggleSettings()" class="text-white"><i data-lucide="x" size="24"></i></button></div>
             <div class="space-y-8 flex-1 overflow-y-auto pr-2 custom-scroll pb-10 text-left">
@@ -199,10 +226,10 @@
                     <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-4 border-b border-zinc-700 pb-1">Personalização Visual</p>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Vibe de Fundo</label>
+                            <label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Fundo</label>
                             <select id="input-bg" class="minimal-input" onchange="previewTheme()">
                                 <option value="#18181b">Carbono</option>
-                                <option value="#0f172a">Oceano Profundo</option>
+                                <option value="#0f172a">Oceano</option>
                                 <option value="#000000">Preto OLED</option>
                             </select>
                         </div>
@@ -212,7 +239,7 @@
                                 <option value="#10b981">Esmeralda</option>
                                 <option value="#8b5cf6">Violeta</option>
                                 <option value="#3b82f6">Azul Royal</option>
-                                <option value="#f59e0b">Ouro Amber</option>
+                                <option value="#f59e0b">Ouro</option>
                                 <option value="#ec4899">Rosa Choque</option>
                                 <option value="#06b6d4">Ciano</option>
                             </select>
@@ -220,39 +247,38 @@
                     </div>
                 </div>
 
-                <!-- 2. INVENTÁRIO -->
+                <!-- 2. INVENTÁRIO CODIFICAÇÃO (CLICÁVEL) -->
                 <div>
                     <div class="flex items-center justify-between mb-4 border-b border-zinc-700 pb-2">
-                        <p class="text-white font-bold text-sm">Inventário Turbo</p>
-                        <button onclick="addShortcutUI()" class="bg-primary/20 text-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Adicionar +</button>
+                        <div class="flex flex-col">
+                            <p class="text-white font-bold text-sm">Inventário de Codificação</p>
+                            <span class="text-[9px] text-zinc-500 uppercase">Clique no código para editar</span>
+                        </div>
+                        <button onclick="addShortcutUI()" class="bg-primary/20 text-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Novo Cód +</button>
                     </div>
-                    <div class="grid grid-cols-7 gap-2 mb-2 px-1 text-[8px] uppercase tracking-widest text-zinc-500 font-black">
-                        <div class="col-span-1">Cód</div>
-                        <div class="col-span-4">Descrição</div>
-                        <div class="col-span-1 text-right">R$</div>
-                        <div class="col-span-1"></div>
+                    <div id="shortcuts-config-list" class="space-y-3 mb-6">
+                        <!-- Itens renderizados via JS -->
                     </div>
-                    <div id="shortcuts-config-list" class="space-y-4 mb-6"></div>
                 </div>
 
-                <!-- 3. SISTEMA E REDE -->
+                <!-- 3. SISTEMA -->
                 <div class="space-y-6">
-                    <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-2 border-b border-zinc-700 pb-1">Definições do Sistema</p>
+                    <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-2 border-b border-zinc-700 pb-1">Definições Internas</p>
                     <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Nome do Caixa</label><input type="text" id="input-terminal-name" class="minimal-input"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">SSID Wi-Fi</label><input type="text" id="input-wifi-ssid" class="minimal-input" placeholder="Ex: WIFI_LOJA"></div>
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Senha Wi-Fi</label><input type="text" id="input-wifi-pass" class="minimal-input"></div>
-                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Meta Diária (R$)</label><input type="number" id="input-daily-goal" class="minimal-input"></div>
                         <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Modo Teclado</label><select id="input-kb-type" class="minimal-input"><option value="virtual">Virtual</option><option value="fisico">Físico</option></select></div>
                     </div>
-                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">WhatsApp Suporte</label><input type="text" id="input-whatsapp" class="minimal-input" placeholder="Ex: 5511999999999"></div>
-                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Chave PIX</label><input type="text" id="input-pix-key" class="minimal-input"></div>
+                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Chave PIX Global</label><input type="text" id="input-pix-key" class="minimal-input"></div>
                     <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Token Mercado Pago</label><input type="password" id="input-api-key" class="minimal-input"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">SSID Wi-Fi</label><input type="text" id="input-wifi-ssid" class="minimal-input"></div>
+                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Senha Wi-Fi</label><input type="text" id="input-wifi-pass" class="minimal-input"></div>
+                    </div>
+                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">WhatsApp Suporte</label><input type="text" id="input-whatsapp" class="minimal-input"></div>
                 </div>
             </div>
-            <button onclick="saveSettings()" id="btn-save" class="mt-4 py-5 w-full rounded-full bg-primary text-black font-bold uppercase text-[10px] active:scale-95 transition-all">Sincronizar e Salvar</button>
+            <button onclick="saveSettings()" id="btn-save" class="mt-4 py-5 w-full rounded-full bg-primary text-black font-bold uppercase text-[10px] active:scale-95 transition-all">Sincronizar Codificações</button>
         </div>
 
         <!-- CAIXA -->
@@ -266,12 +292,12 @@
                 </div>
                 <div class="space-y-3" id="sales-list"></div>
             </div>
-            <button onclick="closeShift()" class="mt-4 py-5 w-full rounded-full bg-red-500 text-white font-bold uppercase text-[10px]">Zerar Turno</button>
+            <button onclick="closeShift()" class="mt-4 py-5 w-full rounded-full bg-red-500 text-white font-bold uppercase text-[10px]">Fechar Turno</button>
         </div>
 
         <div id="view-success" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-40 text-center"><div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_var(--primary-color)]"><i data-lucide="check" class="text-black" stroke-width="4" size="48"></i></div><h2 class="text-primary font-extrabold tracking-widest uppercase text-xl">PAGO!</h2></div>
-        <div id="view-wifi" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-30"><div class="qr-wrapper mb-6"><div id="wifi-qr-box"></div></div><p id="wifi-ssid-val" class="text-white font-bold text-xl mb-8"></p><button onclick="resetApp()" class="px-10 py-4 rounded-full bg-white text-black font-bold uppercase">VOLTAR</button></div>
-        <div id="view-support" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-30"><div class="qr-wrapper mb-6"><div id="whatsapp-qr"></div></div><p class="text-zinc-500 text-xs uppercase tracking-widest mb-8">Suporte Direto</p><button onclick="resetApp()" class="px-10 py-4 rounded-full border border-white/10 text-white font-bold uppercase">FECHAR</button></div>
+        <div id="view-wifi" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-30"><div class="qr-wrapper mb-6"><div id="wifi-qr-box"></div></div><p id="wifi-ssid-val" class="text-white font-bold text-xl mb-4"></p><button onclick="resetApp()" class="px-10 py-4 rounded-full bg-white text-black font-bold uppercase">VOLTAR</button></div>
+        <div id="view-support" class="hidden absolute inset-0 view-overlay flex flex-col items-center justify-center p-8 z-30"><div class="qr-wrapper mb-6"><div id="whatsapp-qr"></div></div><p id="whatsapp-num-val" class="text-white font-bold text-xl mb-4"></p><button onclick="resetApp()" class="px-10 py-4 rounded-full border border-white/10 text-white font-bold uppercase">FECHAR</button></div>
     </div>
 </div>
 
@@ -288,7 +314,8 @@
     let unsubscribePayment = null, pdvMode = 'COMMAND'; 
 
     let terminalConfig = {
-        terminalName: "CAIXA", pixKey: "", mpApiKey: "", theme: "dark", color: "#10b981", bgColor: "#18181b", voice: "on", lastClosed: 0, kbType: "virtual", whatsapp: "", wifiSSID: "", wifiPass: "", dailyGoal: 1000, shortcuts: {} 
+        terminalName: "CAIXA", pixKey: "", mpApiKey: "", theme: "dark", color: "#10b981", bgColor: "#18181b", voice: "on", lastClosed: 0, kbType: "virtual", whatsapp: "", wifiSSID: "", wifiPass: "", dailyGoal: 1000, 
+        shortcuts: {} 
     };
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -311,8 +338,7 @@
                     if (data) { 
                         terminalConfig = { ...terminalConfig, ...data }; 
                         if (!terminalConfig.shortcuts) terminalConfig.shortcuts = {};
-                        applyThemeSettings();
-                        updateUIFromConfig(); 
+                        applyThemeSettings(); updateUIFromConfig(); 
                     } 
                 });
                 onValue(ref(db, `artifacts/${safeAppId}/public/data/sales`), (snapshot) => {
@@ -354,33 +380,36 @@
 
     window.pressKey = (key) => {
         playBeep(600, 0.04, 0.05); if (navigator.vibrate) navigator.vibrate(20);
-        if (key === 'back') { currentDigits = currentDigits.slice(0, -1); } 
+        if (key === 'back') { 
+            if (pdvMode === 'PAYMENT' && currentDigits === "") { resetApp(); return; }
+            currentDigits = currentDigits.slice(0, -1); 
+        } 
         else if (key === 'enter') { handleAction(); return; } 
         else {
             if (pdvMode === 'COMMAND') { if (currentDigits.length < 3) currentDigits += key; } 
-            else { if (key === '0' && currentDigits === "") return; if (currentDigits.length < 8) currentDigits += key; }
+            else { if (key === '0' && currentDigits === "") { resetApp(); return; } if (currentDigits.length < 8) currentDigits += key; }
         }
         updateDisplay();
     };
 
     function updateDisplay() {
-        const valBox = document.getElementById('display-value'), currencyBox = document.getElementById('display-currency'), label = document.getElementById('instruction-label'), body = document.getElementById('app-body');
+        const valBox = document.getElementById('display-value'), currencyBox = document.getElementById('display-currency'), label = document.getElementById('instruction-label'), hint = document.getElementById('back-hint');
         if (pdvMode === 'COMMAND') {
-            body.classList.remove('mode-payment'); currencyBox.classList.add('hidden');
+            document.getElementById('app-body').classList.remove('mode-payment'); currencyBox.classList.add('hidden');
             valBox.textContent = currentDigits || "0"; valBox.className = "text-[9rem] font-bold tracking-tighter text-white transition-all";
-            const c = currentDigits;
+            const c = currentDigits; hint.style.opacity = "0";
             if (terminalConfig.shortcuts && terminalConfig.shortcuts[c]) {
-                const prod = terminalConfig.shortcuts[c]; label.textContent = `ADD: ${prod.desc.toUpperCase()}`; valBox.classList.add('text-primary');
+                const s = terminalConfig.shortcuts[c];
+                label.textContent = (s.type === 'venda') ? `ADD: ${s.desc.toUpperCase()}` : `RUN: ${s.desc.toUpperCase()}`;
+                valBox.classList.add('text-primary');
             } else if (c === '' || c === '0') { label.textContent = cartTotal > 0 ? "0 + ENTER PARA FINALIZAR" : "ENTER PARA VENDA MANUAL"; }
-            else if (c === '1') label.textContent = "1 - WI-FI"; else if (c === '2') label.textContent = "2 - SUPORTE";
-            else if (c === '3') label.textContent = "3 - CONFIGURAÇÕES"; else if (c === '5') label.textContent = "5 - RESUMO CAIXA";
             else label.textContent = "DIGITE UM CÓDIGO";
         } else {
-            body.classList.add('mode-payment'); currencyBox.classList.remove('hidden');
+            document.getElementById('app-body').classList.add('mode-payment'); currencyBox.classList.remove('hidden');
             const val = currentDigits === "" ? 0 : parseInt(currentDigits);
             valBox.textContent = (val / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             valBox.className = "text-[7.5rem] font-black tracking-tighter text-primary";
-            label.textContent = "VALOR MANUAL";
+            label.textContent = "VALOR MANUAL"; hint.style.opacity = (currentDigits === "") ? "1" : "0";
         }
     }
 
@@ -388,13 +417,19 @@
         if (pdvMode === 'COMMAND') {
             const code = currentDigits === "" ? "0" : currentDigits; currentDigits = "";
             if (terminalConfig.shortcuts && terminalConfig.shortcuts[code]) {
-                const prod = terminalConfig.shortcuts[code]; cartTotal += parseFloat(prod.value);
-                cartItems.push({ desc: prod.desc, amount: parseFloat(prod.value) });
-                playBeep(880, 0.1, 0.2); updateCartUI(); updateDisplay(); return;
+                const s = terminalConfig.shortcuts[code];
+                if (s.type === 'venda') {
+                    cartTotal += parseFloat(s.value); cartItems.push({ desc: s.desc, amount: parseFloat(s.value) });
+                    playBeep(880, 0.1, 0.2); updateCartUI(); updateDisplay(); return;
+                } else {
+                    if (s.funcType === 'wifi') showWifi(s.ssid, s.pass);
+                    else if (s.funcType === 'contato') showSupport(s.whatsapp);
+                    else if (s.funcType === 'config') toggleSettings();
+                    else if (s.funcType === 'caixa') { document.getElementById('view-closing').classList.remove('hidden'); renderSales(); }
+                    return;
+                }
             }
             if (code === '0') { if (cartTotal > 0) { processSalePIX(cartTotal); } else { pdvMode = 'PAYMENT'; playBeep(880, 0.1); } }
-            else if (code === '1') showWifi(); else if (code === '2') showSupport();
-            else if (code === '3') toggleSettings(); else if (code === '5') { document.getElementById('view-closing').classList.remove('hidden'); renderSales(); }
             else playBeep(150, 0.2); updateDisplay();
         } else {
             const val = currentDigits === "" ? 0 : parseInt(currentDigits);
@@ -434,39 +469,139 @@
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         document.querySelectorAll('.view-overlay').forEach(v => v.classList.add('hidden'));
         document.getElementById('view-success').classList.remove('hidden');
-        cartTotal = 0; cartItems = []; updateCartUI();
-        setTimeout(resetApp, 3000);
+        cartTotal = 0; cartItems = []; updateCartUI(); setTimeout(resetApp, 3000);
     }
 
+    // --- LÓGICA DE INVENTÁRIO (MODO LISTA + EDIÇÃO) ---
+    
     window.addShortcutUI = () => {
         const id = Date.now();
-        const html = `
-            <div class="shortcut-item grid grid-cols-7 gap-2 items-center" id="sc-${id}">
-                <input type="text" placeholder="CÓD" class="col-span-1 minimal-input text-center text-primary font-black" data-key="trigger">
-                <input type="text" placeholder="DESCRIÇÃO" class="col-span-4 minimal-input text-[11px]" data-key="desc">
-                <input type="number" placeholder="0.00" class="col-span-1 minimal-input text-right" data-key="value">
-                <button onclick="document.getElementById('sc-${id}').remove()" class="col-span-1 text-red-500/50 flex justify-center"><i data-lucide="trash-2" size="16"></i></button>
+        // Adiciona direto no modo edição para um novo item
+        renderShortcutRow(id, null, true);
+    };
+
+    function renderShortcutRow(id, s, isEdit) {
+        const container = document.getElementById('shortcuts-config-list');
+        let html = '';
+
+        if (isEdit) {
+            // MODO EDIÇÃO (INPUTS)
+            html = `
+            <div class="shortcut-item shortcut-edit-mode" id="sc-${id}" data-editing="true">
+                <div class="grid grid-cols-7 gap-2 items-center mb-3">
+                    <input type="text" placeholder="CÓD" class="col-span-1 minimal-input text-center text-primary font-black" data-key="trigger" value="${s ? s.trigger : ''}">
+                    <select class="col-span-2 minimal-input text-[10px] font-bold" data-key="type" onchange="updateShortcutFields('${id}')">
+                        <option value="venda" ${s?.type === 'venda' ? 'selected' : ''}>Venda</option>
+                        <option value="funcao" ${s?.type === 'funcao' ? 'selected' : ''}>Função</option>
+                    </select>
+                    <input type="text" placeholder="DESCRIÇÃO" class="col-span-3 minimal-input text-[11px]" data-key="desc" value="${s ? s.desc : ''}">
+                    <button onclick="document.getElementById('sc-${id}').remove()" class="col-span-1 text-red-500/50 flex justify-center"><i data-lucide="trash-2" size="16"></i></button>
+                </div>
+                <div id="fields-${id}" class="grid grid-cols-1 gap-2 bg-white/5 p-3 rounded-xl"></div>
             </div>`;
-        document.getElementById('shortcuts-config-list').insertAdjacentHTML('beforeend', html); lucide.createIcons();
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const existingItem = document.getElementById(`sc-${id}`);
+            if (existingItem) container.replaceChild(tempDiv.firstElementChild, existingItem);
+            else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
+            
+            updateShortcutFields(id, s);
+        } else {
+            // MODO VISUALIZAÇÃO (CARD CLICÁVEL)
+            const typeLabel = s.type === 'venda' ? `R$ ${parseFloat(s.value).toFixed(2)}` : (s.funcType || 'Função').toUpperCase();
+            html = `
+            <div class="shortcut-item shortcut-view-mode" id="sc-${id}" onclick="switchShortcutToEdit('${id}', ${JSON.stringify(s).replace(/"/g, '&quot;')})">
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20">${s.trigger}</div>
+                    <div class="flex flex-col">
+                        <span class="text-[11px] font-bold text-white uppercase tracking-tight">${s.desc}</span>
+                        <span class="text-[8px] text-zinc-500 uppercase tracking-widest">${s.type === 'venda' ? 'Venda Pré-definida' : 'Função Interna'}</span>
+                    </div>
+                </div>
+                <div class="text-[10px] font-black text-primary/80 bg-primary/5 px-3 py-1 rounded-md border border-primary/10">${typeLabel}</div>
+                <input type="hidden" data-key="trigger" value="${s.trigger}">
+                <input type="hidden" data-key="type" value="${s.type}">
+                <input type="hidden" data-key="desc" value="${s.desc}">
+                <div class="hidden" id="fields-${id}"></div>
+            </div>`;
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const existingItem = document.getElementById(`sc-${id}`);
+            if (existingItem) container.replaceChild(tempDiv.firstElementChild, existingItem);
+            else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
+
+            // Armazena dados extras ocultos para o saveSettings funcionar mesmo em modo visualização
+            const hiddenFields = document.getElementById(`fields-${id}`);
+            if (s.type === 'venda') {
+                hiddenFields.innerHTML = `<input type="hidden" data-key="value" value="${s.value}">`;
+            } else {
+                hiddenFields.innerHTML = `
+                    <input type="hidden" data-key="funcType" value="${s.funcType}">
+                    <input type="hidden" data-key="ssid" value="${s.ssid || ''}">
+                    <input type="hidden" data-key="pass" value="${s.pass || ''}">
+                    <input type="hidden" data-key="whatsapp" value="${s.whatsapp || ''}">`;
+            }
+        }
+        lucide.createIcons();
+    }
+
+    window.switchShortcutToEdit = (id, data) => {
+        renderShortcutRow(id, { ...data, trigger: data.trigger }, true);
+    };
+
+    window.updateShortcutFields = (id, existing = null) => {
+        const container = document.getElementById(`fields-${id}`);
+        const type = document.querySelector(`#sc-${id} [data-key="type"]`).value;
+        if (!container) return;
+        container.innerHTML = "";
+        
+        if (type === 'venda') {
+            container.innerHTML = `<input type="number" placeholder="VALOR R$" class="minimal-input" data-key="value" value="${existing?.value || ''}">`;
+        } else {
+            container.innerHTML = `
+                <select class="minimal-input text-[10px] mb-2" data-key="funcType" onchange="updateFunctionSubFields('${id}')">
+                    <option value="">Escolha a Função...</option>
+                    <option value="wifi" ${existing?.funcType === 'wifi' ? 'selected' : ''}>Wi-Fi (QR Code)</option>
+                    <option value="contato" ${existing?.funcType === 'contato' ? 'selected' : ''}>Contacto (WhatsApp)</option>
+                    <option value="config" ${existing?.funcType === 'config' ? 'selected' : ''}>Abrir Configurações</option>
+                    <option value="caixa" ${existing?.funcType === 'caixa' ? 'selected' : ''}>Abrir Caixa/Vendas</option>
+                </select>
+                <div id="subfields-${id}" class="space-y-2"></div>`;
+            updateFunctionSubFields(id, existing);
+        }
+    };
+
+    window.updateFunctionSubFields = (id, existing = null) => {
+        const sub = document.getElementById(`subfields-${id}`);
+        if (!sub) return;
+        const func = document.querySelector(`#sc-${id} [data-key="funcType"]`).value;
+        sub.innerHTML = "";
+        if (func === 'wifi') {
+            sub.innerHTML = `<input type="text" placeholder="NOME DA REDE (SSID)" class="minimal-input text-[10px]" data-key="ssid" value="${existing?.ssid || ''}">
+                             <input type="text" placeholder="SENHA WI-FI" class="minimal-input text-[10px]" data-key="pass" value="${existing?.pass || ''}">`;
+        } else if (func === 'contato') {
+            sub.innerHTML = `<input type="text" placeholder="WHATSAPP (Ex: 5511...)" class="minimal-input text-[10px]" data-key="whatsapp" value="${existing?.whatsapp || ''}">`;
+        }
     };
 
     function renderShortcutsConfig() {
-        const list = document.getElementById('shortcuts-config-list'); list.innerHTML = "";
-        Object.entries(terminalConfig.shortcuts || {}).forEach(([trigger, prod]) => {
+        const list = document.getElementById('shortcuts-config-list'); 
+        list.innerHTML = "";
+        Object.entries(terminalConfig.shortcuts || {}).forEach(([trigger, s]) => {
             const id = Math.random().toString(36).substr(2, 9);
-            const html = `
-                <div class="shortcut-item grid grid-cols-7 gap-2 items-center" id="sc-${id}">
-                    <input type="text" value="${trigger}" class="col-span-1 minimal-input text-center text-primary font-black" data-key="trigger">
-                    <input type="text" value="${prod.desc}" class="col-span-4 minimal-input text-[11px]" data-key="desc">
-                    <input type="number" value="${prod.value}" class="col-span-1 minimal-input text-right" data-key="value">
-                    <button onclick="document.getElementById('sc-${id}').remove()" class="col-span-1 text-red-500/50 flex justify-center"><i data-lucide="trash-2" size="16"></i></button>
-                </div>`;
-            list.insertAdjacentHTML('beforeend', html);
+            renderShortcutRow(id, { ...s, trigger }, false);
         });
         lucide.createIcons();
     }
 
-    window.resetApp = () => { if(unsubscribePayment) unsubscribePayment(); document.querySelectorAll('.view-overlay').forEach(v => v.classList.add('hidden')); pdvMode = 'COMMAND'; currentDigits = ""; cartTotal = 0; cartItems = []; updateCartUI(); updateDisplay(); };
+    window.resetApp = () => { 
+        if(unsubscribePayment) unsubscribePayment(); 
+        document.querySelectorAll('.view-overlay').forEach(v => v.classList.add('hidden')); 
+        pdvMode = 'COMMAND'; currentDigits = ""; cartTotal = 0; cartItems = []; 
+        updateCartUI(); updateDisplay(); 
+    };
 
     window.toggleSettings = () => {
         const v = document.getElementById('view-settings');
@@ -479,10 +614,11 @@
             setVal('input-whatsapp', terminalConfig.whatsapp);
             setVal('input-wifi-ssid', terminalConfig.wifiSSID);
             setVal('input-wifi-pass', terminalConfig.wifiPass);
-            setVal('input-theme', terminalConfig.theme);
-            setVal('input-color', terminalConfig.color);
-            setVal('input-bg', terminalConfig.bgColor);
-            setVal('input-kb-type', terminalConfig.kbType);
+            const setSelect = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+            setSelect('input-theme', terminalConfig.theme);
+            setSelect('input-color', terminalConfig.color);
+            setSelect('input-bg', terminalConfig.bgColor);
+            setSelect('input-kb-type', terminalConfig.kbType);
             renderShortcutsConfig(); v.classList.remove('hidden');
         } else v.classList.add('hidden');
     };
@@ -491,33 +627,22 @@
         const shortcuts = {};
         document.querySelectorAll('.shortcut-item').forEach(item => {
             const t = item.querySelector('[data-key="trigger"]')?.value;
-            const d = item.querySelector('[data-key="desc"]')?.value;
-            const v = item.querySelector('[data-key="value"]')?.value;
-            if (t && v) shortcuts[t] = { desc: d || "Produto", value: parseFloat(v) };
+            const type = item.querySelector('[data-key="type"]')?.value;
+            const desc = item.querySelector('[data-key="desc"]')?.value;
+            if (t) {
+                const s = { type, desc };
+                if (type === 'venda') { s.value = parseFloat(item.querySelector('[data-key="value"]')?.value || 0); }
+                else {
+                    s.funcType = item.querySelector('[data-key="funcType"]')?.value;
+                    if (s.funcType === 'wifi') { s.ssid = item.querySelector('[data-key="ssid"]')?.value; s.pass = item.querySelector('[data-key="pass"]')?.value; }
+                    else if (s.funcType === 'contato') { s.whatsapp = item.querySelector('[data-key="whatsapp"]')?.value; }
+                }
+                shortcuts[t] = s;
+            }
         });
-
         const getVal = (id) => document.getElementById(id)?.value || "";
-
-        const cfg = { 
-            ...terminalConfig, 
-            terminalName: getVal('input-terminal-name'), 
-            dailyGoal: parseFloat(getVal('input-daily-goal')) || 0,
-            pixKey: getVal('input-pix-key'), 
-            mpApiKey: getVal('input-api-key'),
-            whatsapp: getVal('input-whatsapp'), 
-            wifiSSID: getVal('input-wifi-ssid'), 
-            wifiPass: getVal('input-wifi-pass'),
-            theme: getVal('input-theme'),
-            color: getVal('input-color'),
-            bgColor: getVal('input-bg'),
-            kbType: getVal('input-kb-type'),
-            shortcuts: shortcuts
-        };
-        
-        if (db && auth.currentUser) {
-            await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), cfg);
-            resetApp();
-        }
+        const cfg = { ...terminalConfig, terminalName: getVal('input-terminal-name'), dailyGoal: parseFloat(getVal('input-daily-goal')) || 0, pixKey: getVal('input-pix-key'), mpApiKey: getVal('input-api-key'), whatsapp: getVal('input-whatsapp'), wifiSSID: getVal('input-wifi-ssid'), wifiPass: getVal('input-wifi-pass'), theme: getVal('input-theme'), color: getVal('input-color'), bgColor: getVal('input-bg'), kbType: getVal('input-kb-type'), shortcuts: shortcuts };
+        if (db && auth.currentUser) { await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), cfg); resetApp(); }
     };
 
     function updateUIFromConfig() { 
@@ -531,9 +656,9 @@
         document.getElementById('message-text').textContent = t; 
         b.style.opacity = "1"; setTimeout(() => b.style.opacity = "0", 2500); 
     }
-
-    function showWifi() { document.getElementById('view-wifi').classList.remove('hidden'); document.getElementById('wifi-ssid-val').textContent = terminalConfig.wifiSSID; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${terminalConfig.wifiSSID};P:${terminalConfig.wifiPass};;`, width: 350, height: 350 }); }
-    function showSupport() { document.getElementById('view-support').classList.remove('hidden'); document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${terminalConfig.whatsapp}`, width: 350, height: 350 }); }
+    
+    function showWifi(ssid, pass) { document.getElementById('view-wifi').classList.remove('hidden'); document.getElementById('wifi-ssid-val').textContent = ssid || "Rede"; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${ssid};P:${pass};;`, width: 350, height: 350 }); }
+    function showSupport(num) { document.getElementById('view-support').classList.remove('hidden'); document.getElementById('whatsapp-num-val').textContent = num || ""; document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${num}`, width: 350, height: 350 }); }
 
     function renderSales() {
         const list = document.getElementById('sales-list'), pb = document.getElementById('closing-progress-bar'), pt = document.getElementById('closing-progress-text');
