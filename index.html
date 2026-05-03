@@ -1,724 +1,419 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DOOH Manager Pro - Mídia Indoor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-    <link rel="manifest" id="pwa-manifest" href='data:application/manifest+json,{"name":"DOOH Manager Pro","short_name":"DOOH Pro","start_url":".","display":"fullscreen","background_color":"#000000","theme_color":"#0f172a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1085/1085041.png","sizes":"512x512","type":"image/png"}]}'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
-
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-
-        /* Player da Galeria (Sem barra de progresso para visual limpo) */
-        .ad-slide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 800ms cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; }
-        .ad-slide.active { opacity: 1; z-index: 20; }
-        .ad-media { width: 100%; height: 100%; object-fit: contain; }
-
-        /* BASE: Hora e Letreiro Unificados no Rodapé */
-        #footer-bar { height: 80px; background: rgba(10, 10, 10, 0.95); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; z-index: 50; position: relative; backdrop-filter: blur(10px); }
-
-        /* Relógio (Botão Secreto) - Largura fixa e tabular-nums para não tremer */
-        #clock-area { color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 2px; cursor: pointer; transition: color 0.2s; user-select: none; width: 220px; text-align: center; border-right: 2px solid rgba(255,255,255,0.15); height: 100%; flex-shrink: 0; }
-        #clock-area:active { color: #3b82f6; }
-
-        /* Letreiro Deslizante */
-        #ticker-area { flex-grow: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; padding-left: 20px; }
-        .ticker-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: tickerAnim 25s linear infinite; font-size: 32px; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 2px; }
-        @keyframes tickerAnim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-        /* QR Code Overlay */
-        .qr-overlay { position: absolute; bottom: 30px; right: 30px; z-index: 80; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); padding: 16px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.5); }
-        .qr-overlay span { color: #0f172a; font-size: 14px; font-weight: 900; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
-
-        /* Estilos do Admin Premium */
-        #admin-panel { display: none; position: fixed; inset: 0; z-index: 500; background: linear-gradient(145deg, #0f172a, #020617); overflow-y: auto; }
-        .glass-card { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); backdrop-filter: blur(12px); }
-        .input-premium { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; font-size: 15px; color: white; outline: none; transition: all 0.3s ease; }
-        .input-premium:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); background: rgba(15, 23, 42, 0.9); }
-
-        .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
-        .status-active { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .status-scheduled { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .status-expired { background: rgba(225, 29, 72, 0.15); color: #fb7185; border: 1px solid rgba(225, 29, 72, 0.3); }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        /* Relatório de Impressão */
-        @media print {
-            body * { visibility: hidden; }
-            #report-area, #report-area * { visibility: visible; }
-            #report-area { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMyIi8+PC9zdmc+">
+    
+    <title>Terminal PDV PIX • 1:1 Elite</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { 
+                extend: { 
+                    colors: { 
+                        primary: 'var(--primary-color)',
+                        terminalBg: 'var(--bg-color)'
+                    } 
+                } 
+            }
         }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap');
+        
+        :root { 
+            --primary-color: #10b981; 
+            --bg-color: #18181b;
+            --primary-glow: rgba(16, 185, 129, 0.15);
+        }
+
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Inter', sans-serif; overflow: hidden; 
+            user-select: none; -webkit-user-select: none; 
+            background-color: #000000;
+        }
+
+        /* Layout Dual Frame 1:1 */
+        .app-wrapper {
+            display: flex;
+            flex-direction: column; 
+            width: 100vw;
+            height: 100vh;
+            padding: 8px;
+            gap: 8px;
+            box-sizing: border-box;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (orientation: landscape) {
+            .app-wrapper { flex-direction: row; padding: 12px; gap: 12px; }
+        }
+
+        .square-frame {
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-width: 100%;
+            max-height: calc(50vh - 12px); /* Vertical */
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (orientation: landscape) {
+            .square-frame {
+                max-width: calc(50vw - 20px);
+                max-height: 100%;
+            }
+        }
+
+        .frame-pdv { background-color: var(--bg-color); transition: all 0.5s ease; }
+        .frame-external { background-color: #2c4e64; }
+
+        .mode-payment .frame-pdv { box-shadow: inset 0 0 60px var(--primary-glow); }
+
+        /* Keypad compacto para 1:1 */
+        .keypad-btn { 
+            background: transparent; border-radius: 999px; transition: all 0.2s; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.4rem; font-weight: 400; cursor: pointer; height: 100%;
+        }
+        .keypad-btn:active { background: rgba(255, 255, 255, 0.1); transform: scale(0.9); }
+        .btn-enter { background: #ffffff; color: #000000; font-weight: 700; }
+        
+        .qr-wrapper { 
+            background: #ffffff; padding: 12px; border-radius: 20px; display: inline-block; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform: scale(0.8); 
+            animation: qrEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+        }
+        @keyframes qrEntry { to { transform: scale(0.9); opacity: 1; } }
+
+        .minimal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0; font-size: 0.8rem; outline: none; transition: all 0.3s; color: white; }
+        .minimal-input:focus { border-bottom-color: var(--primary-color); }
+        select.minimal-input option { background-color: #18181b; color: white; }
+
+        /* Overlays adaptados ao frame */
+        .view-overlay { background: var(--bg-color); z-index: 200; position: absolute; inset: 0; display: none; flex-direction: column; padding: 16px; overflow-y: auto; }
+        .view-overlay.active { display: flex; }
+        .custom-scroll::-webkit-scrollbar { width: 0px; }
+
+        .shortcut-view-mode {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .shortcut-edit-mode { background: rgba(255,255,255,0.05); border: 1px solid var(--primary-color); padding: 12px; border-radius: 16px; margin-bottom: 8px; }
+
+        .cart-list-main { max-height: 80px; overflow-y: auto; width: 100%; text-align: center; margin-bottom: 4px; }
+        
+        #screensaver { background-color: #000000; z-index: 1000; display: none; opacity: 0; transition: opacity 1s; border-radius: 24px; }
+        #screensaver.active { display: flex; opacity: 1; }
     </style>
 </head>
-<body class="flex flex-col">
+<body id="app-body" onclick="initAudioAndFullscreen()">
+  
+<div class="app-wrapper">
 
-    <div id="main-gallery" class="flex-grow relative bg-black overflow-hidden">
-        <div id="status-display" class="absolute inset-0 flex flex-col items-center justify-center text-center z-50 bg-[#020617]">
-            <div class="animate-spin h-14 w-14 border-4 border-blue-500 border-t-transparent rounded-full mb-6"></div>
-            <span id="loader-text" class="text-sm font-bold uppercase tracking-[0.2em] text-blue-400">Iniciando Sistema...</span>
-        </div>
-    </div>
+  <!-- FRAME 1 -->
+  <div class="square-frame frame-external p-0">
+    <iframe src="pix.html" style="width:100%; height:100%; border:none; border-radius: 24px;"></iframe>
+  </div>
 
-    <div id="footer-bar">
-        <div id="clock-area" title="Toque para Administrar">00:00</div>
-        <div id="ticker-area">
-            <div class="ticker-text" id="ticker-text">Sua marca em destaque!</div>
-        </div>
-    </div>
+  <!-- FRAME 2 -->
+  <div class="square-frame frame-external p-0">
+    <iframe src="anuncio.html" style="width:100%; height:100%; border:none; border-radius: 24px;"></iframe>
+  </div>
 
-    <div id="admin-panel">
-        <div class="w-full max-w-screen-2xl mx-auto p-6 md:p-10">
+</div>
 
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 pb-6 border-b border-slate-700/50 gap-6">
-                <div>
-                    <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">DOOH Enterprise</h2>
-                    <p class="text-sm text-slate-400 uppercase tracking-[0.2em] mt-2 font-bold">Gestão Inteligente com IA</p>
-                </div>
-                <div class="flex gap-4 w-full sm:w-auto">
-                    <button onclick="generateReport()" class="flex-grow sm:flex-grow-0 px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Relatório B2B
-                    </button>
-                    <button id="close-admin" class="flex-grow sm:flex-grow-0 px-6 py-4 bg-slate-800/80 hover:bg-slate-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-600 shadow-xl flex items-center justify-center gap-2">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        Fechar
-                    </button>
-                </div>
-            </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-            <div class="flex flex-col lg:flex-row gap-10">
+    const firebaseConfig = { apiKey: "AIzaSyD3E7c_4jbnLJCGCapM5L8rta6AXVHvZgs", authDomain: "indisponivel-rrehfe.firebaseapp.com", databaseURL: "https://indisponivel-rrehfe.firebaseio.com", projectId: "indisponivel-rrehfe", storageBucket: "indisponivel-rrehfe.firebasestorage.app", messagingSenderId: "880210924564", appId: "1:880210924564:web:fd565cdb0e4f04cd7ac301" };
+    const safeAppId = 'pdv-ultra-minimal';
+    
+    let db, auth, lastPixString = "";
+    let currentDigits = "", salesData = [], cartTotal = 0, cartItems = [];
+    let unsubscribePayment = null, pdvMode = 'COMMAND'; 
 
-                <div class="w-full lg:w-1/3 flex-shrink-0">
-                    <div class="glass-card p-6 md:p-8 lg:sticky lg:top-10">
-                        <h3 id="form-title" class="text-xl font-black text-white uppercase tracking-wider flex items-center mb-8">
-                            <span class="w-4 h-4 bg-blue-500 rounded-full mr-3 shadow-[0_0_15px_rgba(59,130,246,0.6)]"></span>Novo Contrato
-                        </h3>
+    let terminalConfig = {
+        terminalName: "CAIXA", pixKey: "", mpApiKey: "", theme: "dark", color: "#10b981", bgColor: "#18181b", voice: "on", lastClosed: 0, kbType: "virtual", whatsapp: "", wifiSSID: "", wifiPass: "", dailyGoal: 1000, shortcuts: {} 
+    };
 
-                        <div class="space-y-6">
-                            <div>
-                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">1. Arquivos (Upload Múltiplo Ativado)</label>
-                                <input type="file" id="file-input" multiple accept="image/*, video/*, .mp4, .mov, .webm" class="w-full text-sm text-slate-300 file:bg-blue-600 file:text-white file:border-0 file:rounded-xl file:px-5 file:py-3 file:mr-4 file:cursor-pointer file:font-black file:uppercase file:tracking-wide hover:file:bg-blue-500 input-premium p-2 cursor-pointer">
-                                <p id="edit-file-hint" class="text-xs text-amber-400 hidden mt-3 font-bold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">Modo Edição: Permite substituir apenas 1 arquivo. Deixe vazio para manter.</p>
-                            </div>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(f = 440, d = 0.05, v = 0.1) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.frequency.value = f; g.gain.setValueAtTime(v, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    }
 
-                            <div>
-                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">2. Nome do Anunciante</label>
-                                <input type="text" id="client-name" placeholder="Ex: Central Automóveis" class="input-premium w-full">
-                            </div>
+    const initFirebase = async () => {
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app); auth = getAuth(app);
+        try { await signInAnonymously(auth); } catch (e) {}
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onValue(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), (snap) => {
+                    const data = snap.val();
+                    if (data) { 
+                        terminalConfig = { ...terminalConfig, ...data }; 
+                        if (!terminalConfig.shortcuts) terminalConfig.shortcuts = {};
+                        applyThemeSettings(); updateUIFromConfig(); 
+                    } 
+                });
+                onValue(ref(db, `artifacts/${safeAppId}/public/data/sales`), (snap) => {
+                    salesData = []; snap.forEach(child => { salesData.push({ id: child.key, ...child.val() }); });
+                    salesData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    renderSales();
+                });
+                document.getElementById('status-dot').className = "w-1 h-1 bg-primary rounded-full animate-pulse";
+            }
+        });
+    };
 
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">3. Data Início</label>
-                                    <input type="date" id="start-date" class="input-premium w-full px-4" required>
-                                </div>
-                                <div>
-                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">4. Data Fim</label>
-                                    <input type="date" id="end-date" class="input-premium w-full px-4" required>
-                                </div>
-                            </div>
+    window.initAudioAndFullscreen = () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => {});
+        }
+    };
 
-                            <div class="grid grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                                <div class="col-span-2 text-[10px] uppercase font-black text-blue-400 tracking-widest mb-1">Agendamento Diário (Opcional)</div>
-                                <div>
-                                    <label class="text-xs uppercase font-black text-slate-400 mb-2 block">Hora Início</label>
-                                    <input type="time" id="start-time" value="00:00" class="input-premium w-full px-4 !py-3">
-                                </div>
-                                <div>
-                                    <label class="text-xs uppercase font-black text-slate-400 mb-2 block">Hora Fim</label>
-                                    <input type="time" id="end-time" value="23:59" class="input-premium w-full px-4 !py-3">
-                                </div>
-                            </div>
+    window.toggleFullscreen = () => {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+    };
 
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">5. Categoria VIP</label>
-                                    <select id="ad-category" class="input-premium w-full cursor-pointer appearance-none">
-                                        <option value="Diamante">💎 Diamante (5x)</option>
-                                        <option value="Ouro">🥇 Ouro (4x)</option>
-                                        <option value="Prata">🥈 Prata (3x)</option>
-                                        <option value="Bronze">🥉 Bronze (2x)</option>
-                                        <option value="Basico" selected>⚪ Básico (1x)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Tempo (Seg)</label>
-                                    <input type="number" id="ad-duration" value="10" min="1" class="input-premium w-full text-center text-xl font-black">
-                                </div>
-                            </div>
+    window.previewTheme = () => {
+        const c = document.getElementById('input-color')?.value || '#10b981';
+        const b = document.getElementById('input-bg')?.value || '#18181b';
+        document.documentElement.style.setProperty('--primary-color', c);
+        document.documentElement.style.setProperty('--bg-color', b);
+    };
 
-                            <div>
-                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">6. Link QR Code (Opcional)</label>
-                                <input type="text" id="qr-link" placeholder="Ex: wa.me/..." class="input-premium w-full">
-                            </div>
+    function applyThemeSettings() {
+        const c = terminalConfig.color || '#10b981', b = terminalConfig.bgColor || '#18181b';
+        document.documentElement.style.setProperty('--primary-color', c);
+        document.documentElement.style.setProperty('--bg-color', b);
+        const r = parseInt(c.slice(1,3), 16), g = parseInt(c.slice(3,5), 16), bl = parseInt(c.slice(5,7), 16);
+        document.documentElement.style.setProperty('--primary-glow', `rgba(${r}, ${g}, ${bl}, 0.15)`);
+    }
 
-                            <div class="pt-4 space-y-3">
-                                <button id="upload-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-5 rounded-2xl uppercase text-sm tracking-[0.1em] shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95">Ativar Contrato</button>
-                                <button id="cancel-edit-btn" class="hidden w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-widest transition-all border border-slate-600">Cancelar Edição</button>
-                            </div>
-                            <p id="upload-msg" class="text-center text-sm font-bold text-emerald-400 h-6 uppercase tracking-widest"></p>
-                        </div>
-                    </div>
-                </div>
+    window.pressKey = (key) => {
+        playBeep(600, 0.04, 0.05); if (navigator.vibrate) navigator.vibrate(20);
+        if (key === 'back') { 
+            if ((pdvMode === 'PAYMENT' || cartTotal > 0) && currentDigits === "") { resetApp(); return; }
+            currentDigits = currentDigits.slice(0, -1); 
+        } 
+        else if (key === 'enter') { handleAction(); return; } 
+        else {
+            if (pdvMode === 'COMMAND') { if (currentDigits.length < 3) currentDigits += key; } 
+            else { if (key === '0' && currentDigits === "") { resetApp(); return; } if (currentDigits.length < 8) currentDigits += key; }
+        }
+        updateDisplay();
+    };
 
-                <div class="w-full lg:w-2/3 flex flex-col gap-8">
+    function updateDisplay() {
+        const vB = document.getElementById('display-value'), cB = document.getElementById('display-currency'), l = document.getElementById('instruction-label'), h = document.getElementById('back-hint');
+        if (pdvMode === 'COMMAND') {
+            document.getElementById('pdv-frame').classList.remove('mode-payment'); cB.classList.add('hidden');
+            vB.textContent = currentDigits || "0"; vB.className = "text-[4.5rem] font-bold tracking-tighter text-white";
+            const c = currentDigits; h.style.opacity = "0";
+            if (terminalConfig.shortcuts && terminalConfig.shortcuts[c]) {
+                const s = terminalConfig.shortcuts[c]; l.textContent = `ADD: ${s.desc.toUpperCase()}`; vB.classList.add('text-primary');
+            } else if (c === '' || c === '0') { l.textContent = cartTotal > 0 ? "ENTER FINALIZA" : "ENTER VENDA MANUAL"; }
+            else l.textContent = "CÓDIGO PDV";
+            if (cartTotal > 0 && currentDigits === "") { h.textContent = "Apagar p/ Limpar"; h.style.opacity = "1"; }
+        } else {
+            document.getElementById('pdv-frame').classList.add('mode-payment'); cB.classList.remove('hidden');
+            const v = currentDigits === "" ? 0 : parseInt(currentDigits);
+            vB.textContent = (v / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            vB.className = "text-[3.2rem] font-black tracking-tighter text-primary";
+            l.textContent = "VALOR MANUAL"; h.style.opacity = (currentDigits === "") ? "1" : "0";
+        }
+    }
 
-                    <div class="glass-card p-6 md:p-8">
-                        <h3 class="text-lg font-black text-white uppercase tracking-widest flex items-center mb-6"><span class="w-3 h-3 bg-purple-500 rounded-full mr-3 shadow-[0_0_15px_rgba(168,85,247,0.6)]"></span>Definições da Tela</h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="md:col-span-2">
-                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Letreiro de Notícias (Rodapé)</label>
-                                <input type="text" id="ticker-input" placeholder="Anuncie a sua marca aqui..." class="input-premium w-full">
-                            </div>
-                            <div>
-                                <label class="text-xs uppercase font-black text-slate-400 mb-3 block">Efeito de Transição</label>
-                                <select id="trans-select" class="input-premium w-full cursor-pointer">
-                                    <option value="fade">Dissolver</option>
-                                    <option value="slide">Deslizar</option>
-                                    <option value="zoom">Zoom Suave</option>
-                                    <option value="flip">Giro 3D</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-6 flex justify-end">
-                            <button id="save-settings-btn" class="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white px-10 py-4 rounded-xl text-sm font-black uppercase tracking-widest shadow-[0_8px_15px_rgba(147,51,234,0.3)] transition-all">Salvar Configurações</button>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4">
-                        <h3 class="text-xl font-black text-slate-200 uppercase tracking-widest">Painel de Clientes Ativos <span id="total-ads-badge" class="ml-3 bg-blue-500/20 text-blue-400 py-1 px-3 rounded-lg text-sm">0</span></h3>
-                    </div>
-
-                    <div id="campaigns-list" class="space-y-5 pb-20">
-                        </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="report-area" style="display: none;"></div>
-
-    <script>
-        const SB_URL = 'https://xhznfkqwqzzqbigrlvux.supabase.co'; 
-        const SB_KEY = 'sb_publishable_mlr7SYljs0_TVrD58PBnwQ_SP0jSQOt';
-        const client = supabase.createClient(SB_URL, SB_KEY);
-
-        let ads = []; 
-        let validAds = []; 
-        let activePlaylist = []; // Playlist gerada pelo motor inteligente
-        let playIndex = 0;
-        
-        let extras = { ticker: "" };
-        let trans = "fade";
-        let loop = null;
-        let syncMetricsLoop = null;
-        let editingIndex = -1;
-
-        const gallery = document.getElementById('main-gallery');
-        const loaderText = document.getElementById('loader-text');
-        const statusDisplay = document.getElementById('status-display');
-        const adminPanel = document.getElementById('admin-panel');
-        const campaignsList = document.getElementById('campaigns-list');
-
-        // Configuração de Pesos para o Algoritmo Shuffle
-        const catWeights = { 'Diamante': 5, 'Ouro': 4, 'Prata': 3, 'Bronze': 2, 'Basico': 1 };
-        const catColors = {
-            'Diamante': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50',
-            'Ouro': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
-            'Prata': 'bg-slate-400/20 text-slate-300 border-slate-400/50',
-            'Bronze': 'bg-orange-700/20 text-orange-400 border-orange-700/50',
-            'Basico': 'bg-zinc-700/20 text-zinc-400 border-zinc-600/50'
-        };
-
-        const getTodayString = () => new Date().toISOString().split('T')[0];
-        const getNextMonthString = () => { let d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; };
-
-        document.getElementById('start-date').value = getTodayString();
-        document.getElementById('end-date').value = getNextMonthString();
-
-        // Atualização do Relógio Real
-        setInterval(() => {
-            document.getElementById('clock-area').innerText = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-        }, 1000);
-
-        async function start() {
-            try {
-                loaderText.innerText = "Conectando ao Banco de Dados...";
-                const { data, error } = await client.from('configuracoes').select('*').eq('id', 1).maybeSingle();
-                if (error) throw error;
-
-                if (data) {
-                    let rawLinks = Array.isArray(data.links) ? data.links : [];
-                    ads = rawLinks.map((ad, index) => {
-                        if (typeof ad === 'string') {
-                            const isVid = !!ad.match(/\.(mp4|webm|mov|mkv)$/i);
-                            return { id: 'legacy_'+Date.now()+'_'+index, url: ad, type: isVid ? 'video' : 'image', duration: 10, client: "Anunciante Antigo", category: "Basico", impressions: 0, startDate: getTodayString(), endDate: '2099-12-31', startTime: '00:00', endTime: '23:59' }; 
-                        }
-                        if (!ad.id) ad.id = 'gen_' + Date.now() + '_' + index;
-                        if (!ad.startTime) ad.startTime = '00:00';
-                        if (!ad.endTime) ad.endTime = '23:59';
-                        if (!ad.category) ad.category = 'Basico'; 
-                        return ad;
-                    });
-
-                    extras = data.config_extras || { ticker: "Bem-vindo à nova Mídia Indoor" };
-                    trans = data.transicao || 'fade';
-
-                    document.getElementById('trans-select').value = trans;
-                    document.getElementById('ticker-input').value = extras.ticker;
-                    document.getElementById('ticker-text').innerText = extras.ticker + "  •  " + extras.ticker;
-
-                    statusDisplay.style.display = 'none';
-                    renderCampaigns();
-
-                    if (ads.length > 0) {
-                        run();
-                        if(!syncMetricsLoop) syncMetricsLoop = setInterval(saveMetricsToDB, 60000); // Salva métricas de minuto a minuto
-                    } else {
-                        showEmptyState();
-                    }
+    function handleAction() {
+        if (pdvMode === 'COMMAND') {
+            const code = currentDigits === "" ? "0" : currentDigits; currentDigits = "";
+            if (terminalConfig.shortcuts && terminalConfig.shortcuts[code]) {
+                const s = terminalConfig.shortcuts[code];
+                if (s.type === 'venda') {
+                    cartTotal += parseFloat(s.value); cartItems.push({ desc: s.desc, amount: parseFloat(s.value) });
+                    playBeep(880, 0.1, 0.2); updateCartUI(); updateDisplay(); return;
                 } else {
-                    loaderText.innerText = "ERRO: TABELA NÃO INICIALIZADA (ID 1).";
+                    if (s.funcType === 'config') toggleSettings();
+                    else if (s.funcType === 'caixa') { document.getElementById('view-closing').classList.add('active'); renderSales(); }
+                    else if (s.funcType === 'wifi') showWifi(s.ssid, s.pass);
+                    else if (s.funcType === 'contato') showSupport(s.whatsapp);
+                    return;
                 }
-            } catch (e) {
-                console.error(e);
-                loaderText.innerText = "FALHA DE CONEXÃO. VERIFIQUE A INTERNET.";
             }
+            if (code === '0') { if (cartTotal > 0) { processSalePIX(cartTotal); } else { pdvMode = 'PAYMENT'; playBeep(880, 0.1); } }
+            else playBeep(150, 0.2); updateDisplay();
+        } else {
+            const v = currentDigits === "" ? 0 : parseInt(currentDigits);
+            if (v <= 0) return;
+            const a = v / 100; cartItems.push({ desc: "Venda Manual", amount: a });
+            cartTotal += a; processSalePIX(cartTotal);
         }
+    }
 
-        // MOTOR INTELIGENTE: FILTRAGEM, PESOS E MISTURA
-        function buildAndShufflePlaylist() {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const currentHourMin = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-
-            // 1. Filtra anúncios válidos por data e hora
-            validAds = ads.filter(ad => {
-                let isDateValid = true;
-                if (ad.startDate && ad.endDate) isDateValid = todayStr >= ad.startDate && todayStr <= ad.endDate;
-
-                let isTimeValid = true;
-                if (ad.startTime && ad.endTime) {
-                    if (ad.startTime <= ad.endTime) isTimeValid = currentHourMin >= ad.startTime && currentHourMin <= ad.endTime;
-                    else isTimeValid = currentHourMin >= ad.startTime || currentHourMin <= ad.endTime;
-                }
-                return isDateValid && isTimeValid;
-            });
-
-            activePlaylist = [];
-            
-            // 2. Aplica as regras da Categoria VIP (Pesos)
-            validAds.forEach(ad => {
-                const weight = catWeights[ad.category] || 1;
-                for(let i=0; i<weight; i++) {
-                    activePlaylist.push(ad);
-                }
-            });
-
-            // 3. Embaralhador Fisher-Yates
-            for (let i = activePlaylist.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [activePlaylist[i], activePlaylist[j]] = [activePlaylist[j], activePlaylist[i]];
-            }
-
-            // 4. Algoritmo Anti-Repetição (Tenta separar anúncios iguais)
-            if (activePlaylist.length > 2) {
-                for (let i = 1; i < activePlaylist.length; i++) {
-                    if (activePlaylist[i].id === activePlaylist[i-1].id) {
-                        let swapIdx = Math.floor(Math.random() * activePlaylist.length);
-                        [activePlaylist[i], activePlaylist[swapIdx]] = [activePlaylist[swapIdx], activePlaylist[i]];
-                    }
-                }
-            }
+    window.toggleSettings = () => {
+        const v = document.getElementById('view-settings');
+        if(v.classList.contains('active')) v.classList.remove('active');
+        else {
+            const g = (id) => document.getElementById(id);
+            if (g('input-terminal-name')) g('input-terminal-name').value = terminalConfig.terminalName || "";
+            if (g('input-daily-goal')) g('input-daily-goal').value = terminalConfig.dailyGoal || "";
+            if (g('input-pix-key')) g('input-pix-key').value = terminalConfig.pixKey || "";
+            if (g('input-api-key')) g('input-api-key').value = terminalConfig.mpApiKey || "";
+            if (g('input-whatsapp')) g('input-whatsapp').value = terminalConfig.whatsapp || "";
+            if (g('input-wifi-ssid')) g('input-wifi-ssid').value = terminalConfig.wifiSSID || "";
+            if (g('input-wifi-pass')) g('input-wifi-pass').value = terminalConfig.wifiPass || "";
+            if (g('input-bg')) g('input-bg').value = terminalConfig.bgColor || "#18181b";
+            if (g('input-color')) g('input-color').value = terminalConfig.color || "#10b981";
+            if (g('input-kb-type')) g('input-kb-type').value = terminalConfig.kbType || "virtual";
+            renderShortcutsConfig();
+            v.classList.add('active');
         }
+    };
 
-        function showEmptyState() {
-            gallery.innerHTML = `
-                <div class="absolute inset-0 flex items-center justify-center bg-[#020617]">
-                    <div class="text-slate-500 font-black text-2xl md:text-5xl uppercase text-center p-10 border-4 border-slate-800/50 border-dashed rounded-[3rem] shadow-2xl bg-slate-900/20">
-                        A Tela está Livre<br><span class="text-lg md:text-2xl font-bold text-blue-500 mt-4 block tracking-widest">Toque no Relógio para Iniciar</span>
-                    </div>
-                </div>`;
-        }
-
-        function run() {
-            if (loop) clearTimeout(loop);
-            
-            // Verifica se precisamos recriar a lista (virou o dia ou a hora)
-            if (validAds.length === 0 && ads.length > 0 && adminPanel.style.display !== 'block') {
-                buildAndShufflePlaylist();
-            }
-
-            // Pausa a tela se o admin estiver aberto
-            if (adminPanel.style.display === 'block') return;
-
-            if (activePlaylist.length === 0) {
-                if (ads.length > 0) {
-                    gallery.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-[#020617] text-amber-500/50 font-black text-3xl md:text-5xl uppercase text-center tracking-widest border-[10px] border-amber-500/10">Fora de Horário Comercial<br>Ou Contratos Expirados.</div>`;
+    window.saveSettings = async () => {
+        const shortcuts = {};
+        document.querySelectorAll('.shortcut-item').forEach(item => {
+            const t = item.querySelector('[data-key="trigger"]')?.value;
+            const type = item.querySelector('[data-key="type"]')?.value;
+            const desc = item.querySelector('[data-key="desc"]')?.value;
+            if (t) {
+                const s = { type, desc };
+                if (type === 'venda') s.value = parseFloat(item.querySelector('[data-key="value"]')?.value || 0);
+                else {
+                    s.funcType = item.querySelector('[data-key="funcType"]')?.value;
+                    s.ssid = item.querySelector('[data-key="ssid"]')?.value;
+                    s.pass = item.querySelector('[data-key="pass"]')?.value;
+                    s.whatsapp = item.querySelector('[data-key="whatsapp"]')?.value;
                 }
-                loop = setTimeout(run, 10000); 
-                return;
+                shortcuts[t] = s;
             }
+        });
+        const gV = (id) => document.getElementById(id)?.value || "";
+        const cfg = { ...terminalConfig, terminalName: gV('input-terminal-name'), dailyGoal: parseFloat(gV('input-daily-goal')) || 0, pixKey: gV('input-pix-key'), mpApiKey: gV('input-api-key'), whatsapp: gV('input-whatsapp'), wifiSSID: gV('input-wifi-ssid'), wifiPass: gV('input-wifi-pass'), color: gV('input-color'), bgColor: gV('input-bg'), kbType: gV('input-kb-type'), shortcuts: shortcuts };
+        if (db && auth.currentUser) { await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), cfg); resetApp(); showMessage("Sincronizado!"); }
+    };
 
-            // Reinicia e baralha se chegou ao fim do ciclo atual
-            if (playIndex >= activePlaylist.length) {
-                buildAndShufflePlaylist();
-                playIndex = 0;
-            }
+    function updateCartUI() {
+        const b = document.getElementById('main-total-badge'), vE = document.getElementById('main-cart-total-val'), l = document.getElementById('main-cart-list');
+        if (cartTotal > 0) {
+            b.style.opacity = "1"; b.style.transform = "scale(0.85)"; vE.textContent = cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            l.innerHTML = cartItems.slice(-2).map(i => `<div class="item-row flex justify-between items-center text-[7px] font-bold uppercase tracking-tight text-primary/80 truncate"><span>${i.desc}</span><span>R$ ${i.amount.toFixed(2)}</span></div>`).join('');
+        } else { b.style.opacity = "0"; l.innerHTML = ""; }
+    }
 
-            const currentAd = activePlaylist[playIndex];
-            const playTime = (currentAd.duration || 10) * 1000;
+    async function processSalePIX(amount) {
+        document.getElementById('view-pix').classList.add('active');
+        document.getElementById('pix-amount-label').textContent = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        lastPixString = "00020101021126580014BR.GOV.BCB.PIX0136"+(terminalConfig.pixKey || "pix")+"52040000530398654"+amount.toFixed(2).length.toString().padStart(2,'0')+amount.toFixed(2)+"5802BR5903PDV6009SAO PAULO62070503***6304";
+        document.getElementById('pix-qr-box').innerHTML = "";
+        new QRCode(document.getElementById('pix-qr-box'), { text: lastPixString, width: 200, height: 200 });
+    }
 
-            // REGISTO DE MÉTRICAS (Usa o ID original)
-            const originalIndex = ads.findIndex(a => a.id === currentAd.id);
-            if (originalIndex !== -1) ads[originalIndex].impressions = (ads[originalIndex].impressions || 0) + 1;
+    window.copyPixCode = () => { const e = document.createElement('textarea'); e.value = lastPixString; document.body.appendChild(e); e.select(); document.execCommand('copy'); document.body.removeChild(e); showMessage("Copiado!"); };
 
-            const slide = document.createElement('div');
-            slide.className = `ad-slide start-${trans}`;
+    function registerSale(amount) {
+        push(ref(db, `artifacts/${safeAppId}/public/data/sales`), { amount: amount, timestamp: new Date().toISOString(), items: cartItems });
+        confetti({ particleCount: 80, origin: { y: 0.2 } });
+        resetApp(); document.getElementById('view-success').classList.add('active');
+        setTimeout(resetApp, 2500);
+    }
 
-            if (currentAd.type === 'video') {
-                slide.innerHTML = `<video src="${currentAd.url}" class="ad-media" autoplay muted playsinline></video>`;
-            } else {
-                slide.innerHTML = `<img src="${currentAd.url}" class="ad-media">`;
-            }
-
-            if (currentAd.qr && currentAd.qr.trim() !== "") {
-                const qrContainer = document.createElement('div');
-                qrContainer.className = 'qr-overlay';
-                const qrNode = document.createElement('div');
-                qrContainer.appendChild(qrNode);
-                qrContainer.innerHTML += `<span>Acesse</span>`;
-                slide.appendChild(qrContainer);
-
-                setTimeout(() => { new QRCode(qrContainer.children[0], { text: currentAd.qr, width: 100, height: 100, colorDark : "#0f172a", colorLight : "#fff" }); }, 100);
-            }
-
-            const old = gallery.querySelector('.active');
-            if (old) {
-                old.classList.remove('active');
-                old.classList.add(`exit-${trans}`);
-                setTimeout(() => { if(old.parentNode) old.remove(); }, 1000);
-            }
-
-            const emptyMsg = gallery.querySelector('.text-slate-500, .text-amber-500\\/50');
-            if(emptyMsg) emptyMsg.remove();
-
-            gallery.appendChild(slide);
-            setTimeout(() => { slide.classList.remove(`start-${trans}`); slide.classList.add('active'); }, 50);
-
-            playIndex++;
-            loop = setTimeout(run, playTime);
+    window.addShortcutUI = () => { renderShortcutRow(Date.now(), null, true); };
+    function renderShortcutRow(id, s, isEdit) {
+        const container = document.getElementById('shortcuts-config-list');
+        if (isEdit) {
+            const h = `<div class="shortcut-item shortcut-edit-mode" id="sc-${id}"><div class="grid grid-cols-7 gap-1 items-center"><input type="text" placeholder="CÓD" class="col-span-1 minimal-input text-center text-primary" data-key="trigger" value="${s ? s.trigger : ''}"><select class="col-span-2 minimal-input text-[8px]" data-key="type" onchange="updateShortcutFields('${id}')"><option value="venda" ${s?.type === 'venda' ? 'selected' : ''}>Venda</option><option value="funcao" ${s?.type === 'funcao' ? 'selected' : ''}>Função</option></select><input type="text" placeholder="DESC" class="col-span-3 minimal-input text-[9px]" data-key="desc" value="${s ? s.desc : ''}"><button onclick="document.getElementById('sc-${id}').remove()" class="col-span-1 text-red-500"><i data-lucide="trash-2" size="14"></i></button></div><div id="fields-${id}" class="mt-2"></div></div>`;
+            const tD = document.createElement('div'); tD.innerHTML = h;
+            const ex = document.getElementById(`sc-${id}`);
+            if (ex) container.replaceChild(tD.firstElementChild, ex); else container.insertAdjacentElement('beforeend', tD.firstElementChild);
+            updateShortcutFields(id, s);
+        } else {
+            const h = `<div class="shortcut-item shortcut-view-mode" id="sc-${id}" onclick="switchShortcutToEdit('${id}', ${JSON.stringify(s).replace(/"/g, '&quot;')})"><span class="text-[8px] font-black text-primary">${s.trigger}</span><span class="text-[8px] uppercase truncate px-2">${s.desc}</span><i data-lucide="edit-3" size="10"></i><input type="hidden" data-key="trigger" value="${s.trigger}"><input type="hidden" data-key="type" value="${s.type}"><input type="hidden" data-key="desc" value="${s.desc}"><div class="hidden" id="fields-${id}"></div></div>`;
+            const tD = document.createElement('div'); tD.innerHTML = h;
+            const ex = document.getElementById(`sc-${id}`);
+            if (ex) container.replaceChild(tD.firstElementChild, ex); else container.insertAdjacentElement('beforeend', tD.firstElementChild);
+            const f = document.getElementById(`fields-${id}`);
+            if (s.type === 'venda') f.innerHTML = `<input type="hidden" data-key="value" value="${s.value}">`;
+            else f.innerHTML = `<input type="hidden" data-key="funcType" value="${s.funcType}"><input type="hidden" data-key="ssid" value="${s.ssid || ''}"><input type="hidden" data-key="pass" value="${s.pass || ''}"><input type="hidden" data-key="whatsapp" value="${s.whatsapp || ''}">`;
         }
+        lucide.createIcons();
+    }
 
-        function renderCampaigns() {
-            campaignsList.innerHTML = '';
-            const today = getTodayString();
-            document.getElementById('total-ads-badge').innerText = ads.length;
+    window.switchShortcutToEdit = (id, data) => { renderShortcutRow(id, { ...data, trigger: data.trigger }, true); };
+    window.updateShortcutFields = (id, ex = null) => {
+        const c = document.getElementById(`fields-${id}`); const t = document.querySelector(`#sc-${id} [data-key="type"]`).value;
+        if (!c) return;
+        if (t === 'venda') c.innerHTML = `<input type="number" placeholder="Preço" class="minimal-input text-[8px]" data-key="value" value="${ex?.value || ''}">`;
+        else c.innerHTML = `<select class="minimal-input text-[8px]" data-key="funcType" onchange="updateSubSub('${id}')"><option value="config" ${ex?.funcType === 'config' ? 'selected' : ''}>Ajustes</option><option value="caixa" ${ex?.funcType === 'caixa' ? 'selected' : ''}>Caixa</option><option value="wifi" ${ex?.funcType === 'wifi' ? 'selected' : ''}>Wi-Fi</option><option value="contato" ${ex?.funcType === 'contato' ? 'selected' : ''}>Contato</option></select><div id="subsub-${id}" class="mt-1"></div>`;
+        updateSubSub(id, ex);
+    };
 
-            if (ads.length === 0) {
-                campaignsList.innerHTML = `<div class="text-slate-500 text-sm uppercase text-center mt-10 font-bold border-2 border-dashed border-slate-700/50 p-10 rounded-3xl">Nenhum contrato ativo.</div>`;
-                return;
-            }
+    window.updateSubSub = (id, ex = null) => {
+        const s = document.getElementById(`subsub-${id}`); if (!s) return;
+        const f = document.querySelector(`#sc-${id} [data-key="funcType"]`)?.value; s.innerHTML = "";
+        if (f === 'wifi') s.innerHTML = `<input type="text" placeholder="SSID" class="minimal-input text-[7px]" data-key="ssid" value="${ex?.ssid || ''}"><input type="text" placeholder="Pass" class="minimal-input text-[7px]" data-key="pass" value="${ex?.pass || ''}">`;
+        if (f === 'contato') s.innerHTML = `<input type="text" placeholder="WhatsApp" class="minimal-input text-[7px]" data-key="whatsapp" value="${ex?.whatsapp || ''}">`;
+    };
 
-            const sortedAds = [...ads].sort((a, b) => (b.impressions || 0) - (a.impressions || 0));
+    window.resetApp = () => { 
+        if(unsubscribePayment) unsubscribePayment(); 
+        document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active')); 
+        pdvMode = 'COMMAND'; currentDigits = ""; cartTotal = 0; cartItems = []; updateCartUI(); updateDisplay(); 
+    };
 
-            sortedAds.forEach((ad) => {
-                let statusClass = 'status-active'; let statusText = 'No Ar';
-                if (ad.startDate && ad.endDate) {
-                    if (today < ad.startDate) { statusClass = 'status-scheduled'; statusText = 'Agendado'; }
-                    else if (today > ad.endDate) { statusClass = 'status-expired'; statusText = 'Expirado'; }
-                }
+    function showWifi(ssid, pass) { document.getElementById('view-wifi').classList.add('active'); document.getElementById('wifi-ssid-val').textContent = ssid; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${ssid};P:${pass};;`, width: 200, height: 200 }); }
+    function showSupport(num) { document.getElementById('view-support').classList.add('active'); document.getElementById('whatsapp-num-val').textContent = num; document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${num}`, width: 200, height: 200 }); }
 
-                const views = (ad.impressions || 0).toLocaleString('pt-BR');
-                const sDateBr = ad.startDate ? ad.startDate.split('-').reverse().join('/') : '--';
-                const eDateBr = ad.endDate ? ad.endDate.split('-').reverse().join('/') : '--';
-                const timeText = (ad.startTime && ad.endTime) ? `${ad.startTime} às ${ad.endTime}` : '24h';
-                const catClass = catColors[ad.category] || catColors['Basico'];
+    function updateUIFromConfig() { document.getElementById('terminal-name-label').textContent = terminalConfig.terminalName || "ONLINE"; }
+    function renderSales() {
+        const l = document.getElementById('sales-list'); if(!l) return; l.innerHTML = ""; let t = 0;
+        salesData.forEach(s => { if(new Date(s.timestamp).getTime() > terminalConfig.lastClosed) { t += s.amount; l.innerHTML += `<div class="bg-white/5 p-2 rounded-lg flex justify-between"><span>PIX</span><span class="font-bold">R$ ${s.amount.toFixed(2)}</span></div>`; } });
+        document.getElementById('closing-total').textContent = t.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    }
 
-                const actualIndex = ads.findIndex(a => a.id === ad.id);
-                const isEditing = editingIndex === actualIndex;
+    if ('getBattery' in navigator) {
+        navigator.getBattery().then(bat => {
+            const up = () => { document.getElementById('battery-level').textContent = Math.round(bat.level * 100) + "%"; };
+            up(); bat.onlevelchange = up;
+        });
+    }
 
-                const card = document.createElement('div');
-                card.className = `glass-card p-5 flex flex-col md:flex-row items-start md:items-center gap-6 ${isEditing ? 'ring-2 ring-amber-500 bg-amber-900/20' : ''}`;
+    window.closeShift = () => { set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main/lastClosed`), Date.now()); resetApp(); showMessage("Turno Zerado"); };
+    function showMessage(t) { const b = document.getElementById('message-box'); document.getElementById('message-text').textContent = t; b.style.opacity = "1"; setTimeout(() => b.style.opacity = "0", 2500); }
 
-                card.innerHTML = `
-                    <div class="w-full md:w-40 h-48 md:h-32 bg-black rounded-2xl overflow-hidden flex-shrink-0 border-2 border-slate-700 relative">
-                        ${ad.type === 'video' 
-                            ? `<video src="${ad.url}" class="w-full h-full object-cover"></video><div class="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-md">VÍDEO</div>` 
-                            : `<img src="${ad.url}" class="w-full h-full object-cover">`}
-                    </div>
-                    
-                    <div class="flex-grow w-full">
-                        <div class="flex flex-wrap items-center gap-3 mb-2">
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                            <span class="text-[10px] font-black px-3 py-1.5 rounded-lg border ${catClass} uppercase tracking-widest">${ad.category || 'Basico'}</span>
-                            <span class="text-[10px] text-slate-300 font-bold bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-600">⌚ ${timeText}</span>
-                        </div>
-                        <h4 class="font-black text-xl text-white mb-1 truncate">${ad.client || 'Sem Nome'}</h4>
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">📅 ${sDateBr} até ${eDateBr}</p>
-                    </div>
-                    
-                    <div class="flex flex-row md:flex-col justify-between w-full md:w-auto items-center md:items-end md:pl-6 md:border-l border-white/10 gap-4 mt-4 md:mt-0">
-                        <div class="text-left md:text-right">
-                            <span class="text-[10px] text-slate-400 uppercase font-black mb-1 block">Exibições Reais</span>
-                            <span class="text-3xl font-black text-blue-400 tabular-nums leading-none tracking-tighter">${views}</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="edit-campaign-btn p-3 bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white rounded-xl transition-all" data-id="${ad.id}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button class="del-campaign-btn p-3 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all" data-id="${ad.id}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                campaignsList.appendChild(card);
-            });
-
-            document.querySelectorAll('.del-campaign-btn').forEach(btn => {
-                btn.onclick = async (e) => {
-                    e.stopPropagation();
-                    if(confirm("Deseja EXCLUIR permanentemente esta campanha e as suas métricas?")) {
-                        const adId = e.currentTarget.getAttribute('data-id');
-                        const idx = ads.findIndex(a => String(a.id) === String(adId));
-                        if (idx > -1) {
-                            e.currentTarget.innerHTML = '...';
-                            ads.splice(idx, 1);
-                            if (editingIndex === idx) resetForm();
-                            else if (editingIndex > idx) editingIndex--; 
-                            
-                            buildAndShufflePlaylist();
-                            renderCampaigns();
-                            await client.from('configuracoes').update({ links: ads }).eq('id', 1);
-                        }
-                    }
-                }
-            });
-
-            document.querySelectorAll('.edit-campaign-btn').forEach(btn => {
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    const adId = e.currentTarget.getAttribute('data-id');
-                    const idx = ads.findIndex(a => String(a.id) === String(adId));
-                    if (idx === -1) return;
-
-                    editingIndex = idx;
-                    const ad = ads[idx];
-
-                    document.getElementById('client-name').value = ad.client || "";
-                    if(ad.startDate) document.getElementById('start-date').value = ad.startDate;
-                    if(ad.endDate) document.getElementById('end-date').value = ad.endDate;
-                    document.getElementById('start-time').value = ad.startTime || "00:00";
-                    document.getElementById('end-time').value = ad.endTime || "23:59";
-                    document.getElementById('ad-duration').value = ad.duration || 10;
-                    document.getElementById('ad-category').value = ad.category || "Basico";
-                    document.getElementById('qr-link').value = ad.qr || "";
-                    document.getElementById('file-input').value = ""; 
-
-                    document.getElementById('form-title').innerHTML = '<span class="w-4 h-4 bg-amber-500 rounded-full mr-3"></span>Editando Contrato';
-                    const upBtn = document.getElementById('upload-btn');
-                    upBtn.innerText = 'Salvar Alterações';
-                    upBtn.classList.replace('from-blue-600', 'from-amber-600');
-                    upBtn.classList.replace('to-blue-500', 'to-amber-500');
-                    document.getElementById('cancel-edit-btn').classList.remove('hidden');
-                    document.getElementById('edit-file-hint').classList.remove('hidden');
-
-                    renderCampaigns(); 
-                    document.getElementById('admin-panel').scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-
-        function resetForm() {
-            editingIndex = -1;
-            document.getElementById('file-input').value = "";
-            document.getElementById('client-name').value = "";
-            document.getElementById('qr-link').value = "";
-            document.getElementById('start-date').value = getTodayString();
-            document.getElementById('end-date').value = getNextMonthString();
-            document.getElementById('start-time').value = "00:00";
-            document.getElementById('end-time').value = "23:59";
-            document.getElementById('ad-duration').value = 10;
-            document.getElementById('ad-category').value = "Basico";
-
-            document.getElementById('form-title').innerHTML = '<span class="w-4 h-4 bg-blue-500 rounded-full mr-3"></span>Novo Contrato';
-            const upBtn = document.getElementById('upload-btn');
-            upBtn.innerText = 'Ativar Contrato';
-            upBtn.classList.replace('from-amber-600', 'from-blue-600');
-            upBtn.classList.replace('to-amber-500', 'to-blue-500');
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            document.getElementById('edit-file-hint').classList.add('hidden');
-
-            renderCampaigns();
-        }
-
-        async function saveMetricsToDB() {
-            if (ads.length === 0) return;
-            await client.from('configuracoes').update({ links: ads }).eq('id', 1);
-        }
-
-        function generateReport() {
-            const reportDiv = document.getElementById('report-area');
-            let content = `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">Relatório de Desempenho DOOH</h1>
-                    <p><strong>Data de Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                        <thead>
-                            <tr style="background-color: #f1f5f9; text-align: left;">
-                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Anunciante</th>
-                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Categoria</th>
-                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Período Contrato</th>
-                                <th style="padding: 12px; border: 1px solid #cbd5e1;">Exibições Comprovadas</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            ads.forEach(ad => {
-                const sDate = ad.startDate ? ad.startDate.split('-').reverse().join('/') : '--';
-                const eDate = ad.endDate ? ad.endDate.split('-').reverse().join('/') : '--';
-                
-                content += `
-                    <tr>
-                        <td style="padding: 12px; border: 1px solid #cbd5e1; font-weight: bold;">${ad.client || 'Sem Nome'}</td>
-                        <td style="padding: 12px; border: 1px solid #cbd5e1;">${ad.category || 'Basico'}</td>
-                        <td style="padding: 12px; border: 1px solid #cbd5e1;">${sDate} até ${eDate}</td>
-                        <td style="padding: 12px; border: 1px solid #cbd5e1; color: #2563eb; font-weight: bold;">${(ad.impressions || 0).toLocaleString('pt-BR')}</td>
-                    </tr>
-                `;
-            });
-
-            content += `</tbody></table><p style="margin-top: 30px; font-size: 12px; color: #64748b; text-align: center;">Este documento é gerado automaticamente e serve como Comprovante de Play para o cliente.</p></div>`;
-
-            reportDiv.innerHTML = content;
-            window.print();
-            setTimeout(() => { reportDiv.innerHTML = ""; }, 1000);
-        }
-
-        // ABERTURA DO PAINEL PELO RELÓGIO
-        document.getElementById('clock-area').onclick = (e) => {
-            e.stopPropagation();
-            adminPanel.style.display = 'block';
-            renderCampaigns(); 
-        };
-
-        // FECHO DO PAINEL (Recalcula e Volta a Tocar)
-        document.getElementById('close-admin').onclick = () => {
-            adminPanel.style.display = 'none';
-            resetForm();
-            buildAndShufflePlaylist();
-            playIndex = 0;
-            run(); 
-        };
-
-        document.getElementById('cancel-edit-btn').onclick = resetForm;
-
-        // UPLOAD MÚLTIPLO E EDIÇÃO
-        document.getElementById('upload-btn').onclick = async () => {
-            const fileInput = document.getElementById('file-input');
-            const clientName = document.getElementById('client-name').value || "Cliente Geral";
-            const sDate = document.getElementById('start-date').value;
-            const eDate = document.getElementById('end-date').value;
-            const sTime = document.getElementById('start-time').value;
-            const eTime = document.getElementById('end-time').value;
-            const duration = parseInt(document.getElementById('ad-duration').value) || 10;
-            const category = document.getElementById('ad-category').value;
-            const qr = document.getElementById('qr-link').value;
-
-            if (editingIndex === -1 && fileInput.files.length === 0) return alert("Selecione fotos ou vídeos primeiro.");
-
-            const btn = document.getElementById('upload-btn');
-            const msg = document.getElementById('upload-msg');
-            btn.innerText = "PROCESSANDO ARQUIVOS..."; btn.disabled = true;
-
-            if (editingIndex === -1) {
-                // Modo Novo: Suporta Múltiplos Arquivos
-                for (let f of fileInput.files) {
-                    const ext = f.name.split('.').pop().toLowerCase();
-                    const n = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-                    const { error } = await client.storage.from('anuncios').upload(n, f);
-
-                    if (!error) {
-                        const { data } = client.storage.from('anuncios').getPublicUrl(n);
-                        const isVid = f.type.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
-
-                        ads.push({ 
-                            id: n, client: clientName, url: data.publicUrl, type: isVid ? 'video' : 'image', 
-                            duration: duration, qr: qr, category: category, startDate: sDate, endDate: eDate, startTime: sTime, endTime: eTime, impressions: 0
-                        });
-                    } else { alert("Erro ao enviar: " + error.message); }
-                }
-                msg.innerText = "Campanha Ativada com Sucesso!";
-            } else {
-                // Modo Edição: Apenas atualiza
-                const ad = ads[editingIndex];
-                if (fileInput.files.length > 0) {
-                    const f = fileInput.files[0]; 
-                    const ext = f.name.split('.').pop().toLowerCase();
-                    const n = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-                    const { error } = await client.storage.from('anuncios').upload(n, f);
-
-                    if (!error) {
-                        const { data } = client.storage.from('anuncios').getPublicUrl(n);
-                        const isVid = f.type.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
-                        ad.url = data.publicUrl; ad.type = isVid ? 'video' : 'image'; ad.id = n; 
-                    } else { alert("Erro ao substituir arquivo."); }
-                }
-
-                ad.client = clientName; ad.startDate = sDate; ad.endDate = eDate; ad.startTime = sTime; ad.endTime = eTime; ad.duration = duration; ad.category = category; ad.qr = qr;
-                msg.innerText = "Alterações Salvas!";
-            }
-
-            await client.from('configuracoes').update({ links: ads }).eq('id', 1);
-
-            buildAndShufflePlaylist();
-            renderCampaigns();
-            resetForm();
-            btn.disabled = false;
-            setTimeout(() => msg.innerText = "", 4000);
-        };
-
-        // SALVAR CONFIGURAÇÕES GERAIS
-        document.getElementById('save-settings-btn').onclick = async () => {
-            const btn = document.getElementById('save-settings-btn');
-            extras.ticker = document.getElementById('ticker-input').value;
-            trans = document.getElementById('trans-select').value;
-            document.getElementById('ticker-text').innerText = extras.ticker + "  •  " + extras.ticker;
-
-            btn.innerText = "GRAVANDO..."; btn.disabled = true;
-
-            const { error } = await client.from('configuracoes').update({ transicao: trans, config_extras: extras }).eq('id', 1);
-            if (!error) {
-                btn.innerText = "TUDO SALVO!";
-                setTimeout(() => { btn.innerText = "Salvar Configurações"; }, 2000);
-            } else {
-                alert("Erro de Sincronização.");
-                btn.innerText = "Salvar Configurações";
-            }
-            btn.disabled = false;
-        };
-
-        // TELA CHEIA AUTOMÁTICA
-        document.body.onclick = (e) => { 
-            if (adminPanel.style.display === 'block' || e.target.closest('button') || e.target.closest('#admin-panel') || e.target.closest('input')) return;
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {}); 
-            }
-        };
-
-        window.onload = start;
-    </script>
+    setInterval(() => { const d = new Date(); document.getElementById('clock').textContent = d.toLocaleTimeString('pt-BR'); }, 1000);
+    window.addEventListener('load', () => { lucide.createIcons(); initFirebase(); });
+</script>
 </body>
 </html>
