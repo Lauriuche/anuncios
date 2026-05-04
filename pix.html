@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#18181b" id="meta-theme-color">
+    <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwMDAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMyIi8+PC9zdmc+">
     
-    <title>Terminal PDV PIX • Pro Elite V4.3</title>
+    <title>PDV PIX • Pro Elite 1:1</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -42,585 +42,454 @@
             margin: 0; padding: 0; width: 100%; height: 100%; 
             font-family: 'Inter', sans-serif; overflow: hidden; 
             user-select: none; -webkit-user-select: none; 
-            transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #000000;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* O Quadrado Proporcional 1:1 Cravado */
+        .pdv-square {
+            position: relative;
+            width: min(100vw, 100vh);
+            height: min(100vw, 100vh);
+            max-width: 720px;
+            max-height: 720px;
+            aspect-ratio: 1 / 1;
             background-color: var(--bg-color);
+            border-radius: 40px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.9);
+            border: 1px solid rgba(255,255,255,0.03);
+            transition: box-shadow 0.4s ease;
         }
 
-        body { color: #ffffff; }
-        
-        .terminal-container { 
-            width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; 
-            transition: all 0.5s ease;
-            background-color: var(--bg-color);
+        .mode-payment .pdv-square { 
+            box-shadow: inset 0 0 80px var(--primary-glow), 0 25px 80px rgba(0,0,0,0.9); 
         }
 
-        .mode-payment .terminal-container { 
-            box-shadow: inset 0 0 100px var(--primary-glow); 
+        /* QR Codes Gigantes (80% da área útil) */
+        .qr-giant-wrapper { 
+            background: #ffffff; 
+            padding: 12px; 
+            border-radius: 32px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80%;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border: 5px solid rgba(0,0,0,0.04);
         }
-        
-        @media (min-width: 768px) {
-            body { display: flex; align-items: center; justify-content: center; background-color: #09090b !important; }
-            .terminal-container { 
-                max-width: 450px; height: 90vh; max-height: 900px; 
-                border-radius: 40px; overflow: hidden; 
-                border: 1px solid rgba(255,255,255,0.05); 
-            }
+        .qr-giant-wrapper canvas, .qr-giant-wrapper img {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 14px;
         }
 
-        .keypad-btn { 
-            background: transparent; border-radius: 20px; transition: all 0.2s; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 2rem; font-weight: 400; cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.02);
+        /* Visor Centralizado */
+        .display-area {
+            flex: 1 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            overflow: hidden;
+            min-height: 100px; /* ajuste conforme o desejado para o visor */
+            overflow-y: auto;
         }
-        .keypad-btn:active { background: rgba(255, 255, 255, 0.1); transform: scale(0.95); }
+
+        /* Teclado e Botão de Finalização */
+        .keypad-section {
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-top: 0px solid rgba(255,255,255,0.02);
+        }
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        .keypad-btn {
+          background: rgba(255,255,255,0.02);
+          border-radius: 14px;
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          font-size: 1.6rem; 
+          font-weight: 500; 
+          cursor: pointer; 
+          height: 35px;  /* ajuste aqui */
+          transition: all 0.2s;
+          border: 1px solid rgba(255,255,255,0.02);
+          color: white;
+          
+        }
+
+        .keypad-btn:active { background: rgba(255, 255, 255, 0.1); transform: scale(0.92); }
+        .keypad-btn.special { color: var(--primary-color); font-weight: 900; font-size: 1.8rem; }
         
-        .btn-enter-large { 
+        .btn-enter-pdv { 
             background: #ffffff; color: #000000; font-weight: 900; 
-            text-transform: uppercase; letter-spacing: 0.1em; font-size: 1.2rem;
-            border-radius: 24px;
+            border-radius: 18px; font-size: 1rem; text-transform: uppercase;
+            width: calc(100% - 24px); height: 52px; margin: 8px 12px 12px 12px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        
-        .qr-wrapper { 
-            background: #ffffff; padding: 20px; border-radius: 28px; display: inline-block; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4); transform: scale(0.9); 
-            animation: qrEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+
+        /* Overlays */
+        .view-overlay { 
+            background: var(--bg-color); z-index: 100; position: absolute; inset: 0; 
+            display: none; flex-direction: column; padding: 1.5rem; overflow-y: auto; 
         }
-        @keyframes qrEntry { to { transform: scale(1); opacity: 1; } }
-
-        .minimal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0; font-size: 1rem; outline: none; transition: all 0.3s; color: white; }
-        .minimal-input:focus { border-bottom-color: var(--primary-color); }
-        select.minimal-input option { background-color: #18181b; color: white; }
-
-        .view-overlay { background: var(--bg-color); z-index: 50; position: absolute; inset: 0; display: none; flex-direction: column; }
         .view-overlay.active { display: flex; }
+
+        .cart-list-mini { max-height: 60px; overflow-y: auto; width: 100%; text-align: center; }
+        .minimal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0; font-size: 0.9rem; outline: none; transition: all 0.3s; color: white; }
+        .minimal-input:focus { border-bottom-color: var(--primary-color); }
         .custom-scroll::-webkit-scrollbar { width: 0px; }
-
-        .shortcut-view-mode {
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
-            padding: 12px 16px; border-radius: 16px; cursor: pointer;
-            transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
-        }
-        .shortcut-view-mode:hover { border-color: var(--primary-color); background: rgba(255,255,255,0.06); }
-        .shortcut-edit-mode { background: rgba(255,255,255,0.05); border: 1px solid var(--primary-color); padding: 16px; border-radius: 20px; margin-bottom: 12px; }
-
-        .cart-list-main { max-height: 120px; overflow-y: auto; width: 100%; text-align: center; margin-bottom: 10px; }
-        .item-row { animation: itemEntry 0.4s ease-out forwards; }
-        @keyframes itemEntry { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        #screensaver { background-color: #000000; z-index: 1000; display: none; opacity: 0; transition: opacity 1s; }
-        #screensaver.active { display: flex; opacity: 1; }
+        .shortcut-item-row { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; }
     </style>
 </head>
-<body class="md:p-6" id="app-body">
+<body id="app-body">
 
-<div class="terminal-container">
-    <!-- Feedback Box -->
-    <div id="message-box" class="absolute top-10 left-1/2 -translate-x-1/2 bg-zinc-800 border border-zinc-700 text-white px-5 py-3 rounded-full text-xs font-medium flex items-center gap-3 shadow-2xl transition-all opacity-0 pointer-events-none z-[100]">
-        <div id="msg-dot" class="w-1.5 h-1.5 bg-primary rounded-full"></div>
-        <span id="message-text">Processando</span>
-    </div>
-
-    <!-- Screensaver -->
-    <div id="screensaver" class="absolute inset-0 flex-col items-center justify-center cursor-pointer" onclick="resetActivity()">
-        <div class="animate-pulse opacity-20 text-center">
-            <i data-lucide="zap" size="64" class="text-primary mx-auto mb-4"></i>
-            <p id="ss-clock" class="text-4xl font-light tracking-[0.3em]">00:00</p>
+    <div class="pdv-square" id="main-terminal">
+        
+        <!-- Feedback Toast -->
+        <div id="message-box" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-800 border border-zinc-700 text-white px-4 py-1.5 rounded-full text-[9px] font-bold flex items-center gap-2 shadow-2xl transition-all opacity-0 pointer-events-none z-[300]">
+            <div id="msg-dot" class="w-1 h-1 bg-primary rounded-full"></div>
+            <span id="message-text">OK</span>
         </div>
-    </div>
 
-    <!-- Status Bar Compacta -->
-    <div class="px-8 pt-3 pb-2 flex justify-between items-center z-10 relative">
-        <div class="flex items-center gap-3">
-            <div id="status-dot" class="w-1.5 h-1.5 bg-zinc-500 rounded-full transition-colors duration-500"></div>
-            <span id="terminal-name-label" class="text-[9px] font-bold tracking-[0.2em] uppercase opacity-60">OFFLINE</span>
-        </div>
-        <div class="flex items-center gap-4">
-            <div id="battery-status" class="flex items-center gap-1.5 opacity-40">
-                <span id="battery-level" class="text-[9px] font-bold">--%</span>
-                <i data-lucide="battery" size="14"></i>
+        <!-- Barra de Status com Bateria Real -->
+        <div class="px-6 pt-6 pb-1 flex justify-between items-center z-10 relative">
+            <div class="flex items-center gap-2">
+                <div id="status-dot" class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse"></div>
+                <span id="terminal-name-label" class="text-[8px] font-black tracking-widest uppercase opacity-40">OFFLINE</span>
             </div>
-            <button onclick="toggleSettings()" class="text-[10px] font-medium text-zinc-500 hover:text-white tracking-widest opacity-60">
-                <span id="clock">00:00:00</span>
-            </button>
+            <div class="flex items-center gap-4">
+                <div id="battery-status" class="flex items-center gap-1 opacity-40 transition-opacity">
+                    <span id="battery-level" class="text-[8px] font-bold text-white">--%</span>
+                    <i data-lucide="battery" class="text-white" size="10"></i>
+                </div>
+                <button onclick="toggleSettings()" class="text-[9px] font-black text-zinc-500 hover:text-white transition-all p-1">
+                    <span id="clock">00:00:00</span>
+                </button>
+            </div>
         </div>
-    </div>
 
-    <!-- Main View -->
-    <div class="flex-1 relative flex flex-col min-h-0 overflow-hidden">
-        <div id="view-main" class="flex-1 flex flex-col pt-0 px-2 view-transition">
+        <!-- Visor de Venda -->
+        <div class="display-area text-white">
+            <div class="cart-list-mini custom-scroll px-4 mb-1" id="main-cart-list"></div>
+
+            <div id="main-total-badge" class="mb-1 opacity-0 transition-all scale-75">
+                <div class="bg-primary/20 text-primary border border-primary/20 px-3 py-1 rounded-full text-[20px] font-black uppercase">
+                    R$ <span id="main-cart-total-val">0,00</span>
+                </div>
+            </div>
+
+            <span id="instruction-label" class="text-[9px] text-zinc-500 tracking-[0.3em] uppercase mb-1 opacity-40">PDV ELITE PRO</span>
             
-            <div class="flex-1 flex flex-col items-center justify-center relative">
-                <div class="cart-list-main custom-scroll px-6 space-y-1.5" id="main-cart-list"></div>
-
-                <div id="main-total-badge" class="mb-4 opacity-0 transition-all scale-90">
-                    <div class="bg-primary/20 text-primary border border-primary/20 px-6 py-2 rounded-full text-[13px] font-black tracking-widest uppercase">
-                        TOTAL: R$ <span id="main-cart-total-val">0,00</span>
-                    </div>
-                </div>
-
-                <span id="instruction-label" class="text-[11px] text-zinc-500 tracking-[0.4em] uppercase mb-1 opacity-40 text-center">AGUARDANDO CÓDIGO</span>
-                
-                <div class="flex items-baseline justify-center w-full px-4">
-                    <span id="display-currency" class="hidden text-2xl font-light text-zinc-500 mr-2">R$</span>
-                    <span id="display-value" class="text-[9rem] font-bold tracking-tighter leading-none transition-all duration-300">0</span>
-                </div>
-                
-                <div id="back-hint" class="mt-4 text-[9px] font-bold tracking-widest uppercase opacity-0 transition-all text-zinc-500 text-center">
-                    Apagar p/ Voltar
-                </div>
+            <div class="flex items-baseline justify-center w-full">
+                <span id="display-currency" class="hidden text-sm font-light text-zinc-500 mr-1">R$</span>
+                <span id="display-value" class="text-[5.5rem] font-bold tracking-tighter leading-none transition-all duration-200">0</span>
             </div>
-
-            <!-- KEYPAD PRO -->
-            <div id="virtual-keypad" class="flex flex-col gap-3 pb-8">
-                <div class="grid grid-cols-3 gap-3 flex-1 px-4">
-                    <button onclick="pressKey('1')" class="keypad-btn h-14">1</button>
-                    <button onclick="pressKey('2')" class="keypad-btn h-14">2</button>
-                    <button onclick="pressKey('3')" class="keypad-btn h-14">3</button>
-                    
-                    <button onclick="pressKey('4')" class="keypad-btn h-14">4</button>
-                    <button onclick="pressKey('5')" class="keypad-btn h-14">5</button>
-                    <button onclick="pressKey('6')" class="keypad-btn h-14">6</button>
-                    
-                    <button onclick="pressKey('7')" class="keypad-btn h-14">7</button>
-                    <button onclick="pressKey('8')" class="keypad-btn h-14">8</button>
-                    <button onclick="pressKey('9')" class="keypad-btn h-14">9</button>
-                    
-                    <button onclick="pressKey('*')" class="keypad-btn h-14 text-primary font-bold text-3xl opacity-80">*</button>
-                    <button onclick="pressKey('0')" class="keypad-btn h-14">0</button>
-                    <button onclick="pressKey('back')" class="keypad-btn h-14 text-zinc-500"><i data-lucide="delete" size="24"></i></button>
-                </div>
-                
-                <button onclick="pressKey('enter')" class="btn-enter-large h-16 flex items-center justify-center gap-3 active:scale-95 transition-all mx-4">
-                    <span>Finalizar</span>
-                    <i data-lucide="arrow-right" size="22"></i>
-                </button>
+            
+            <div id="back-hint" class="mt-1 text-[7px] font-black tracking-widest uppercase opacity-0 text-zinc-500 transition-opacity">
+                Apagar p/ Limpar
             </div>
         </div>
 
-        <!-- ECRÃ PIX -->
-        <div id="view-pix" class="view-overlay overflow-y-auto items-center justify-center p-6 text-center">
-            <div class="qr-wrapper mb-6"><div id="pix-qr-box"></div></div>
-            <div class="mb-4">
-                <p class="text-zinc-500 text-[10px] uppercase opacity-60 mb-1">Pagamento via PIX</p>
-                <span class="text-4xl font-bold text-white tracking-tighter" id="pix-amount-label">R$ 0,00</span>
+        <!-- Teclado Encaixado na Base -->
+        <div class="keypad-section" id="container-teclado-virtual">
+            <div class="keypad-grid">
+                <button onclick="pressKey('1')" class="keypad-btn">1</button>
+                <button onclick="pressKey('2')" class="keypad-btn">2</button>
+                <button onclick="pressKey('3')" class="keypad-btn">3</button>
+                <button onclick="pressKey('4')" class="keypad-btn">4</button>
+                <button onclick="pressKey('5')" class="keypad-btn">5</button>
+                <button onclick="pressKey('6')" class="keypad-btn">6</button>
+                <button onclick="pressKey('7')" class="keypad-btn">7</button>
+                <button onclick="pressKey('8')" class="keypad-btn">8</button>
+                <button onclick="pressKey('9')" class="keypad-btn">9</button>
+                <button onclick="pressKey('*')" class="keypad-btn special">*</button>
+                <button onclick="pressKey('0')" class="keypad-btn">0</button>
+                <button onclick="pressKey('back')" class="keypad-btn text-zinc-500"><i data-lucide="delete" size="22"></i></button>
             </div>
-            <div class="flex flex-col gap-3 w-full max-w-[350px] mb-8">
-                <div id="pix-status-indicator" class="flex items-center justify-center gap-3 bg-primary/10 px-5 py-3 rounded-2xl border border-primary/20">
-                    <div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <span class="text-primary text-[10px] font-bold tracking-widest uppercase">Aguardando Pagamento...</span>
-                </div>
-                <button onclick="copyPixCode()" class="flex items-center justify-center gap-2 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-bold tracking-widest uppercase active:scale-95">
-                    <i data-lucide="copy" size="14"></i> Copiar Código PIX
-                </button>
-            </div>
-            <button onclick="resetApp()" class="text-zinc-500 text-[9px] font-bold uppercase tracking-widest p-4 underline">Cancelar Operação</button>
-        </div>
-
-        <!-- AJUSTES -->
-        <div id="view-settings" class="view-overlay p-8 overflow-y-auto custom-scroll">
-            <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Configurações</h2><button onclick="toggleSettings()" class="text-white"><i data-lucide="x" size="24"></i></button></div>
-            <div class="space-y-8 text-left pb-10">
-                
-                <div>
-                    <div class="flex items-center justify-between mb-4 border-b border-zinc-700 pb-2">
-                        <div class="flex flex-col">
-                            <p class="text-white font-bold text-sm">Inventário de Codificação</p>
-                            <span class="text-[9px] text-zinc-500 uppercase">Clique no card para editar</span>
-                        </div>
-                        <button onclick="addShortcutUI()" class="bg-primary/20 text-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Novo Cód +</button>
-                    </div>
-                    <div id="shortcuts-config-list"></div>
-                </div>
-
-                <div class="space-y-6">
-                    <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-2 border-b border-zinc-700 pb-1">Definições do Sistema</p>
-                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Nome do Caixa</label><input type="text" id="input-terminal-name" class="minimal-input"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Meta Diária (R$)</label><input type="number" id="input-daily-goal" class="minimal-input"></div>
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Modo Teclado</label><select id="input-kb-type" class="minimal-input"><option value="virtual">Virtual</option><option value="fisico">Físico</option></select></div>
-                    </div>
-                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Chave PIX Global</label><input type="text" id="input-pix-key" class="minimal-input"></div>
-                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Token Mercado Pago</label><input type="password" id="input-api-key" class="minimal-input"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">SSID Wi-Fi</label><input type="text" id="input-wifi-ssid" class="minimal-input"></div>
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Senha Wi-Fi</label><input type="text" id="input-wifi-pass" class="minimal-input"></div>
-                    </div>
-                    <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-1">WhatsApp Suporte</label><input type="text" id="input-whatsapp" class="minimal-input"></div>
-                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Fundo</label><select id="input-bg" class="minimal-input" onchange="previewTheme()"><option value="#18181b">Carbono</option><option value="#0f172a">Oceano</option><option value="#000000">Preto OLED</option></select></div>
-                        <div><label class="block text-[9px] text-zinc-500 uppercase tracking-widest mb-2">Cor Destaque</label><select id="input-color" class="minimal-input" onchange="previewTheme()"><option value="#10b981">Esmeralda</option><option value="#8b5cf6">Violeta</option><option value="#3b82f6">Azul</option><option value="#f59e0b">Ouro</option><option value="#ec4899">Rosa</option></select></div>
-                    </div>
-                </div>
-            </div>
-            <button onclick="saveSettings()" id="btn-save" class="my-10 py-5 w-full rounded-full bg-primary text-black font-bold uppercase text-[10px] active:scale-95 transition-all">Sincronizar e Salvar</button>
-        </div>
-
-        <!-- CAIXA -->
-        <div id="view-closing" class="view-overlay p-8 overflow-y-auto">
-            <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-light tracking-tighter text-white">Resumo Turno</h2><button onclick="resetApp()" class="text-white"><i data-lucide="x" size="24"></i></button></div>
-            <div class="flex-1 pb-6">
-                <div class="mb-8 p-6 bg-white/5 rounded-3xl border border-white/5 text-center">
-                    <p id="closing-total" class="text-5xl font-black text-white mb-4">R$ 0,00</p>
-                    <div class="flex justify-between items-end mb-2 px-2"><p class="text-[9px] text-zinc-500 uppercase">Meta Diária</p><p id="closing-progress-text" class="text-[10px] font-bold text-primary">0%</p></div>
-                    <div class="w-full h-1.5 bg-black/40 rounded-full overflow-hidden"><div id="closing-progress-bar" class="h-full bg-primary transition-all duration-1000" style="width: 0%"></div></div>
-                </div>
-                <p class="text-[10px] text-zinc-500 uppercase font-bold mb-4 ml-2">Ranking de Vendas</p>
-                <div class="space-y-2 mb-8" id="ranking-list"></div>
-                <p class="text-[10px] text-zinc-500 uppercase font-bold mb-4 ml-2">Histórico</p>
-                <div class="space-y-3 mb-8" id="sales-list"></div>
-            </div>
-            <button onclick="closeShift()" class="mt-4 py-5 w-full rounded-full bg-red-500 text-white font-bold uppercase text-[10px]">Fechar Turno</button>
-        </div>
-
-        <!-- SUCESSO -->
-        <div id="view-success" class="view-overlay items-center justify-center p-8 text-center">
-            <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_var(--primary-color)] animate-bounce"><i data-lucide="check" class="text-black" stroke-width="4" size="48"></i></div>
-            <h2 class="text-primary font-extrabold tracking-widest uppercase text-xl mb-2">PAGO!</h2>
-            <button id="btn-whatsapp-receipt" class="w-full mt-10 py-4 bg-zinc-800 rounded-2xl flex items-center justify-center gap-3 font-bold uppercase text-[10px] text-white border border-white/5">
-                <i data-lucide="message-circle" size="18"></i> Recibo WhatsApp
+            <button onclick="pressKey('enter')" class="btn-enter-pdv active:scale-95 transition-all">
+                <span>Finalizar Venda</span>
+                <i data-lucide="arrow-right" size="18"></i>
             </button>
-            <button onclick="resetApp()" class="mt-6 text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Concluir</button>
         </div>
 
-        <!-- MODAIS FUNÇÕES -->
-        <div id="view-wifi" class="view-overlay items-center justify-center p-8 text-center"><div class="qr-wrapper mb-6"><div id="wifi-qr-box"></div></div><p id="wifi-ssid-val" class="text-white font-bold text-xl mb-8"></p><button onclick="resetApp()" class="px-10 py-4 rounded-full bg-white text-black font-bold uppercase">VOLTAR</button></div>
-        <div id="view-support" class="view-overlay items-center justify-center p-8 text-center"><div class="qr-wrapper mb-6"><div id="whatsapp-qr"></div></div><p id="whatsapp-num-val" class="text-white font-bold text-xl mb-8"></p><button onclick="resetApp()" class="px-10 py-4 rounded-full border border-white/10 text-white font-bold uppercase">FECHAR</button></div>
+        <!-- Overlays QR Gigantes -->
+        <div id="view-pix" class="view-overlay items-center justify-center text-center">
+            <div class="qr-giant-wrapper mb-4"><div id="pix-qr-box"></div></div>
+            <span class="text-2xl font-black text-white tracking-tighter mb-4" id="pix-amount-label">R$ 0,00</span>
+            <button onclick="copyPixCode()" class="w-full py-4 bg-white/10 rounded-2xl text-[9px] font-black uppercase mb-4 active:scale-95">COPIAR PIX</button>
+            <button onclick="resetApp()" class="text-zinc-500 text-[9px] font-bold uppercase underline">Cancelar</button>
+        </div>
 
+        <div id="view-wifi" class="view-overlay items-center justify-center text-center">
+            <div class="qr-giant-wrapper mb-6"><div id="wifi-qr-box"></div></div>
+            <p id="wifi-ssid-val" class="text-white font-bold text-lg mb-8"></p>
+            <button onclick="resetApp()" class="px-10 py-3 rounded-xl bg-white text-black font-bold uppercase text-[9px]">VOLTAR</button>
+        </div>
+
+        <div id="view-support" class="view-overlay items-center justify-center text-center">
+            <div class="qr-giant-wrapper mb-6"><div id="whatsapp-qr"></div></div>
+            <p id="whatsapp-num-val" class="text-white font-bold text-lg mb-8"></p>
+            <button onclick="resetApp()" class="px-10 py-3 rounded-xl border border-white/10 text-white font-bold uppercase text-[9px]">FECHAR</button>
+        </div>
+
+        <!-- Ajustes Completos -->
+        <div id="view-settings" class="view-overlay">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-light text-white tracking-tighter">Ajustes</h2><button onclick="resetApp()" class="text-white"><i data-lucide="x" size="24"></i></button></div>
+            <div class="space-y-6 flex-1 overflow-y-auto custom-scroll pb-6 text-left">
+                <div>
+                    <div class="flex items-center justify-between mb-3 border-b border-white/5 pb-1">
+                        <p class="text-white font-bold text-[10px] uppercase tracking-widest">Inventário Turbo</p>
+                        <button onclick="addShortcutUI()" class="text-primary text-[10px] font-black uppercase">+ NOVO</button>
+                    </div>
+                    <div id="shortcuts-config-list" class="space-y-2"></div>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-zinc-500 text-[8px] uppercase font-bold border-b border-white/5 pb-1">Sistema & Hardware</p>
+                    <input type="text" id="input-terminal-name" class="minimal-input" placeholder="Nome Caixa">
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="input-kb-type" class="minimal-input text-[10px]"><option value="virtual">Teclado Virtual</option><option value="fisico">Físico</option></select>
+                        <input type="number" id="input-daily-goal" class="minimal-input" placeholder="Meta R$">
+                    </div>
+                    <input type="text" id="input-pix-key" class="minimal-input" placeholder="Chave PIX Global">
+                    <input type="password" id="input-api-key" class="minimal-input" placeholder="Token MP">
+                    <input type="text" id="input-whatsapp" class="minimal-input" placeholder="WhatsApp Suporte">
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <select id="input-bg" class="minimal-input text-[10px]" onchange="previewTheme()"><option value="#18181b">Carbono</option><option value="#0f172a">Oceano</option><option value="#000000">Preto OLED</option></select>
+                        <select id="input-color" class="minimal-input text-[10px]" onchange="previewTheme()"><option value="#10b981">Esmeralda</option><option value="#8b5cf6">Violeta</option><option value="#3b82f6">Azul</option></select>
+                    </div>
+                </div>
+            </div>
+            <button onclick="saveSettings()" id="btn-save" class="py-4 w-full rounded-2xl bg-primary text-black font-black uppercase text-[10px] mt-2 active:scale-95">Sincronizar</button>
+        </div>
+
+        <!-- Sucesso e Recibo -->
+        <div id="view-success" class="view-overlay items-center justify-center text-center">
+            <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_var(--primary-color)] animate-bounce"><i data-lucide="check" class="text-black" stroke-width="4" size="48"></i></div>
+            <h2 class="text-primary font-black uppercase text-xl mb-4 tracking-widest">PAGO!</h2>
+            <button id="btn-whatsapp-receipt" class="w-full py-4 bg-zinc-800 rounded-2xl flex items-center justify-center gap-2 font-bold text-[9px] text-white active:scale-95 transition-all">
+                <i data-lucide="message-circle" size="16"></i> ENVIAR RECIBO WHATSAPP
+            </button>
+            <button onclick="resetApp()" class="mt-6 text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Fechar</button>
+        </div>
     </div>
-</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = { apiKey: "AIzaSyD3E7c_4jbnLJCGCapM5L8rta6AXVHvZgs", authDomain: "indisponivel-rrehfe.firebaseapp.com", databaseURL: "https://indisponivel-rrehfe.firebaseio.com", projectId: "indisponivel-rrehfe", storageBucket: "indisponivel-rrehfe.firebasestorage.app", messagingSenderId: "880210924564", appId: "1:880210924564:web:fd565cdb0e4f04cd7ac301" };
     const safeAppId = 'pdv-ultra-minimal';
     
     let db, auth, lastPixString = "";
-    let currentDigits = "", salesData = [], cartTotal = 0, cartItems = [];
-    let unsubscribePayment = null, pdvMode = 'COMMAND'; 
-
-    let terminalConfig = {
-        terminalName: "CAIXA", pixKey: "", mpApiKey: "", theme: "dark", color: "#10b981", bgColor: "#18181b", lastClosed: 0, kbType: "virtual", whatsapp: "", wifiSSID: "", wifiPass: "", dailyGoal: 1000, shortcuts: {} 
-    };
-
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(freq = 440, duration = 0.05, volume = 0.1) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.frequency.value = freq; gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
-    }
+    let currentDigits = "", cartTotal = 0, cartItems = [];
+    let unsubscribePayment = null, pdvMode = 'COMMAND', terminalConfig = { terminalName: "CAIXA", pixKey: "", shortcuts: {} };
 
     const initFirebase = async () => {
         const app = initializeApp(firebaseConfig);
         db = getDatabase(app); auth = getAuth(app);
-        try { await signInAnonymously(auth); } catch (err) {}
+        try { await signInAnonymously(auth); } catch (e) {}
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                onValue(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) { terminalConfig = { ...terminalConfig, ...data }; applyThemeSettings(); updateUIFromConfig(); } 
+                onValue(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), (snap) => {
+                    const data = snap.val();
+                    if (data) { 
+                        terminalConfig = { ...terminalConfig, ...data }; 
+                        if (!terminalConfig.shortcuts) terminalConfig.shortcuts = {};
+                        applyThemeSettings(); updateUIFromConfig(); 
+                    } 
                 });
-                onValue(ref(db, `artifacts/${safeAppId}/public/data/sales`), (snapshot) => {
-                    salesData = []; snapshot.forEach(child => { salesData.push({ id: child.key, ...child.val() }); });
-                    salesData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    renderSales();
-                });
-                document.getElementById('status-dot').className = "w-1.5 h-1.5 bg-primary rounded-full animate-pulse";
             }
         });
     };
 
-    window.previewTheme = () => {
-        const color = document.getElementById('input-color')?.value || '#10b981';
-        const bg = document.getElementById('input-bg')?.value || '#18181b';
-        document.documentElement.style.setProperty('--primary-color', color);
-        document.documentElement.style.setProperty('--bg-color', bg);
-        const r = parseInt(color.slice(1,3), 16), g = parseInt(color.slice(3,5), 16), b = parseInt(color.slice(5,7), 16);
-        document.documentElement.style.setProperty('--primary-glow', `rgba(${r}, ${g}, ${b}, 0.15)`);
-        document.getElementById('meta-theme-color').content = bg;
+    function initBatteryMonitor() {
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(bat => {
+                const up = () => { 
+                    const lvl = Math.round(bat.level * 100);
+                    const lvlEl = document.getElementById('battery-level');
+                    if(lvlEl) lvlEl.textContent = lvl + "%"; 
+                    const statEl = document.getElementById('battery-status');
+                    if(statEl) statEl.style.opacity = bat.charging ? "1" : "0.4";
+                };
+                up(); bat.onlevelchange = up; bat.onchargingchange = up;
+            });
+        }
     }
 
-    function applyThemeSettings() {
-        const color = terminalConfig.color || '#10b981', bg = terminalConfig.bgColor || '#18181b';
-        document.documentElement.style.setProperty('--primary-color', color);
-        document.documentElement.style.setProperty('--bg-color', bg);
-        const r = parseInt(color.slice(1,3), 16), g = parseInt(color.slice(3,5), 16), b = parseInt(color.slice(5,7), 16);
-        document.documentElement.style.setProperty('--primary-glow', `rgba(${r}, ${g}, ${b}, 0.15)`);
-        document.getElementById('meta-theme-color').content = bg;
-    }
-
-    if ('getBattery' in navigator) {
-        navigator.getBattery().then(bat => {
-            const up = () => { document.getElementById('battery-level').textContent = Math.round(bat.level * 100) + "%"; };
-            up(); bat.onlevelchange = up;
-        });
-    }
+    window.resetApp = () => { 
+        if(unsubscribePayment) unsubscribePayment(); 
+        document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active')); 
+        pdvMode = 'COMMAND'; currentDigits = ""; cartTotal = 0; cartItems = []; updateCartUI(); updateDisplay(); 
+    };
 
     window.pressKey = (key) => {
-        playBeep(600, 0.04, 0.05); if (navigator.vibrate) navigator.vibrate(20);
         if (key === 'back') { 
             if ((pdvMode === 'PAYMENT' || cartTotal > 0) && currentDigits === "") { resetApp(); return; }
             currentDigits = currentDigits.slice(0, -1); 
         } 
         else if (key === 'enter') { handleAction(); return; } 
-        else {
-            if (currentDigits.length < 15) currentDigits += key; 
-        }
+        else { if (currentDigits.length < 15) currentDigits += key; }
         updateDisplay();
     };
 
     function updateDisplay() {
-        const vB = document.getElementById('display-value'), cB = document.getElementById('display-currency'), l = document.getElementById('instruction-label'), h = document.getElementById('back-hint');
+        const vB = document.getElementById('display-value'), l = document.getElementById('instruction-label'), h = document.getElementById('back-hint');
         if (pdvMode === 'COMMAND') {
-            document.getElementById('app-body').classList.remove('mode-payment'); cB.classList.add('hidden');
-            vB.textContent = currentDigits || "0"; vB.className = "text-[8rem] font-bold tracking-tighter text-white transition-all";
-            const c = currentDigits; h.style.opacity = "0";
-
+            document.getElementById('main-terminal').classList.remove('mode-payment');
+            vB.textContent = currentDigits || "0"; vB.className = "text-[5.5rem] font-bold tracking-tighter text-white transition-all";
+            const c = currentDigits; h.style.opacity = (cartTotal > 0 && c === "") ? "1" : "0";
             if (c.includes('*')) {
                 const parts = c.split('*');
-                const qty = parts[0];
-                const shortcutCode = parts[1];
-                if (terminalConfig.shortcuts && terminalConfig.shortcuts[shortcutCode]) {
-                    l.textContent = `ADICIONAR ${qty}x ${terminalConfig.shortcuts[shortcutCode].desc.toUpperCase()}`;
-                    vB.classList.add('text-primary');
-                } else { l.textContent = "DEFINIR QUANTIDADE"; }
+                if (terminalConfig.shortcuts && terminalConfig.shortcuts[parts[1]]) l.textContent = `ADD ${parts[0]}x ${terminalConfig.shortcuts[parts[1]].desc.toUpperCase()}`;
+                else l.textContent = "DEFINIR QUANTIDADE";
             } else if (terminalConfig.shortcuts && terminalConfig.shortcuts[c]) {
                 const s = terminalConfig.shortcuts[c];
-                l.textContent = (s.type === 'venda') ? `ADICIONAR: ${s.desc.toUpperCase()}` : `EXECUTAR: ${s.desc.toUpperCase()}`;
-                vB.classList.add('text-primary');
-            } else if (c === '' || c === '0') {
-                l.textContent = cartTotal > 0 ? "0 + ENTER PARA FINALIZAR" : "ENTER PARA VENDA MANUAL";
-            } else l.textContent = "DIGITE UM CÓDIGO";
-            
-            if (cartTotal > 0 && currentDigits === "") { h.textContent = "Apagar p/ Limpar Venda"; h.style.opacity = "1"; }
+                l.textContent = (s.type === 'venda') ? `ADD: ${s.desc.toUpperCase()}` : `RUN: ${s.desc.toUpperCase()}`;
+            } else l.textContent = (cartTotal > 0) ? "ENTER FINALIZA" : "AGUARDANDO CÓDIGO";
         } else {
-            document.getElementById('app-body').classList.add('mode-payment'); cB.classList.remove('hidden');
-            const val = currentDigits === "" ? 0 : parseInt(currentDigits);
-            vB.textContent = (val / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            vB.className = "text-[6.5rem] font-black tracking-tighter text-primary";
+            document.getElementById('main-terminal').classList.add('mode-payment');
+            const v = currentDigits === "" ? 0 : parseInt(currentDigits);
+            vB.textContent = (v / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            vB.className = "text-[4.2rem] font-black tracking-tighter text-primary";
             l.textContent = "VALOR MANUAL";
-            if (currentDigits === "") { h.textContent = "Apagar p/ Voltar"; h.style.opacity = "1"; } else { h.style.opacity = "0"; }
         }
     }
 
     function handleAction() {
         if (pdvMode === 'COMMAND') {
-            const currentInput = currentDigits === "" ? "0" : currentDigits; currentDigits = "";
-            
-            if (currentInput.includes('*')) {
-                const parts = currentInput.split('*');
-                const qty = parseInt(parts[0]) || 1;
-                const scCode = parts[1];
-                if (terminalConfig.shortcuts && terminalConfig.shortcuts[scCode]) {
-                    const s = terminalConfig.shortcuts[scCode];
-                    if (s.type === 'venda') {
-                        cartTotal += (parseFloat(s.value) * qty);
-                        for(let i=0; i<qty; i++) cartItems.push({ desc: s.desc, amount: parseFloat(s.value) });
-                        playBeep(880, 0.1, 0.2); updateCartUI(); updateDisplay(); return;
-                    }
+            const input = currentDigits === "" ? "0" : currentDigits; currentDigits = "";
+            if (input.includes('*')) {
+                const parts = input.split('*');
+                const sc = terminalConfig.shortcuts[parts[1]];
+                if (sc && sc.type === 'venda') {
+                    const qty = parseInt(parts[0]) || 1;
+                    cartTotal += (parseFloat(sc.value) * qty);
+                    for(let i=0; i<qty; i++) cartItems.push({ desc: sc.desc, amount: parseFloat(sc.value) });
+                    updateCartUI(); updateDisplay(); return;
                 }
             }
-
-            if (terminalConfig.shortcuts && terminalConfig.shortcuts[currentInput]) {
-                const s = terminalConfig.shortcuts[currentInput];
-                if (s.type === 'venda') {
-                    cartTotal += parseFloat(s.value); cartItems.push({ desc: s.desc, amount: parseFloat(s.value) });
-                    playBeep(880, 0.1, 0.2); updateCartUI(); updateDisplay(); return;
-                } else {
+            if (terminalConfig.shortcuts && terminalConfig.shortcuts[input]) {
+                const s = terminalConfig.shortcuts[input];
+                if (s.type === 'venda') { cartTotal += parseFloat(s.value); cartItems.push({ desc: s.desc, amount: parseFloat(s.value) }); updateCartUI(); updateDisplay(); return; }
+                else {
                     if (s.funcType === 'config') toggleSettings();
-                    else if (s.funcType === 'caixa') { document.getElementById('view-closing').classList.add('active'); renderSales(); }
                     else if (s.funcType === 'wifi') showWifi(s.ssid, s.pass);
                     else if (s.funcType === 'contato') showSupport(s.whatsapp);
                     return;
                 }
             }
-            if (currentInput === '0') { if (cartTotal > 0) { processSalePIX(cartTotal); } else { pdvMode = 'PAYMENT'; playBeep(880, 0.1); } }
-            else playBeep(150, 0.2); updateDisplay();
+            if (input === '0') { if (cartTotal > 0) processSalePIX(cartTotal); else pdvMode = 'PAYMENT'; }
+            updateDisplay();
         } else {
             const v = currentDigits === "" ? 0 : parseInt(currentDigits);
-            if (v <= 0) return;
-            const a = v / 100; cartItems.push({ desc: "Venda Manual", amount: a });
-            cartTotal += a; processSalePIX(cartTotal);
+            if (v > 0) { cartTotal = v/100; cartItems = [{desc: "Manual", amount: cartTotal}]; processSalePIX(cartTotal); }
         }
     }
 
     function updateCartUI() {
-        const badge = document.getElementById('main-total-badge'), valEl = document.getElementById('main-cart-total-val'), list = document.getElementById('main-cart-list');
-        if (cartTotal > 0) {
-            badge.style.opacity = "1"; badge.style.transform = "scale(1)"; valEl.textContent = cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            list.innerHTML = cartItems.slice(-4).map(item => `<div class="item-row flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-primary/80 truncate"><span>${item.desc}</span><span>R$ ${item.amount.toFixed(2)}</span></div>`).join('');
-        } else { badge.style.opacity = "0"; list.innerHTML = ""; }
+        const b = document.getElementById('main-total-badge'), vE = document.getElementById('main-cart-total-val'), l = document.getElementById('main-cart-list');
+        if (cartTotal > 0) { b.style.opacity = "1"; vE.textContent = cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); l.innerHTML = cartItems.slice(-3).map(i => `<div class="text-[7px] font-bold uppercase text-primary/80 truncate">• ${i.desc} (R$ ${i.amount.toFixed(2)})</div>`).join(''); }
+        else { b.style.opacity = "0"; l.innerHTML = ""; }
     }
 
     async function processSalePIX(amount) {
-        const viewPix = document.getElementById('view-pix');
-        if (viewPix) viewPix.classList.add('active');
+        document.getElementById('view-pix').classList.add('active');
         document.getElementById('pix-amount-label').textContent = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const txId = "TX_" + Date.now();
-        const txRef = ref(db, `artifacts/${safeAppId}/public/data/transactions/${txId}`);
-        set(txRef, { status: 'pendente', amount: amount });
-        unsubscribePayment = onValue(txRef, (snapshot) => { if (snapshot.val()?.status === 'pago') registerSale(amount); });
         lastPixString = "00020101021126580014BR.GOV.BCB.PIX0136"+(terminalConfig.pixKey || "pix")+"52040000530398654"+amount.toFixed(2).length.toString().padStart(2,'0')+amount.toFixed(2)+"5802BR5903PDV6009SAO PAULO62070503***6304";
         document.getElementById('pix-qr-box').innerHTML = "";
-        new QRCode(document.getElementById('pix-qr-box'), { text: lastPixString, width: 350, height: 350, correctLevel: QRCode.CorrectLevel.H });
+        new QRCode(document.getElementById('pix-qr-box'), { text: lastPixString, width: 450, height: 450 });
     }
 
-    function registerSale(amount) {
-        const finalItems = [...cartItems];
-        push(ref(db, `artifacts/${safeAppId}/public/data/sales`), { amount: amount, timestamp: new Date().toISOString(), items: finalItems });
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        document.getElementById('btn-whatsapp-receipt').onclick = () => {
-            let txt = `*COMPROVANTE DE VENDA*\n----------------------\n`;
-            finalItems.forEach(i => txt += `• ${i.desc}: R$ ${i.amount.toFixed(2)}\n`);
-            txt += `----------------------\n*TOTAL: R$ ${amount.toFixed(2)}*\n\nObrigado!`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`);
-        };
-        document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active'));
-        document.getElementById('view-success').classList.add('active');
-        cartTotal = 0; cartItems = []; updateCartUI();
-        setTimeout(resetApp, 5000);
-    }
-
-    window.addShortcutUI = () => { renderShortcutRow(Date.now(), null, true); };
+    window.addShortcutUI = () => renderShortcutRow(Date.now(), null, true);
     function renderShortcutRow(id, s, isEdit) {
         const container = document.getElementById('shortcuts-config-list');
         if (isEdit) {
-            const h = `<div class="shortcut-item-config bg-white/5 p-4 rounded-2xl mb-3" id="sc-${id}"><div class="grid grid-cols-7 gap-2 items-center mb-3"><input type="text" placeholder="CÓD" class="col-span-1 minimal-input text-center text-primary font-black" data-key="trigger" value="${s ? s.trigger : ''}"><select class="col-span-2 minimal-input text-[10px] font-bold" data-key="type" onchange="updateFields('${id}')"><option value="venda" ${s?.type === 'venda' ? 'selected' : ''}>Venda</option><option value="funcao" ${s?.type === 'funcao' ? 'selected' : ''}>Função</option></select><input type="text" placeholder="DESC" class="col-span-3 minimal-input text-[11px]" data-key="desc" value="${s ? s.desc : ''}"><button onclick="document.getElementById('sc-${id}').remove()" class="col-span-1 text-red-500/50 flex justify-center"><i data-lucide="trash-2" size="16"></i></button></div><div id="fields-${id}" class="grid grid-cols-1 gap-2"></div></div>`;
-            const tempDiv = document.createElement('div'); tempDiv.innerHTML = h;
-            const ex = document.getElementById(`sc-${id}`);
-            if (ex) container.replaceChild(tempDiv.firstElementChild, ex); else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
-            updateFields(id, s);
+            const h = `<div class="bg-white/5 p-3 rounded-xl mb-2" id="sc-${id}"><div class="grid grid-cols-7 gap-1 items-center"><input type="text" placeholder="C" class="col-span-1 minimal-input text-center text-primary" data-key="trigger" value="${s ? s.trigger : ''}"><select class="col-span-2 minimal-input text-[8px]" data-key="type" onchange="updateFields('${id}')"><option value="venda" ${s?.type === 'venda' ? 'selected' : ''}>Venda</option><option value="funcao" ${s?.type === 'funcao' ? 'selected' : ''}>Função</option></select><input type="text" placeholder="D" class="col-span-3 minimal-input text-[9px]" data-key="desc" value="${s ? s.desc : ''}"><button onclick="document.getElementById('sc-${id}').remove()" class="col-span-1 text-red-500"><i data-lucide="trash-2" size="14"></i></button></div><div id="fields-${id}" class="mt-1"></div></div>`;
+            const tD = document.createElement('div'); tD.innerHTML = h; container.appendChild(tD.firstElementChild); updateFields(id, s);
         } else {
-            const typeL = s.type === 'venda' ? `R$ ${parseFloat(s.value).toFixed(2)}` : 'FUNC';
-            const h = `<div class="shortcut-view-mode" id="sc-${id}" onclick="editShort('${id}', '${btoa(encodeURIComponent(JSON.stringify(s)))}')"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20">${s.trigger}</div><div class="flex flex-col text-left"><span class="text-[11px] font-bold text-white uppercase tracking-tight">${s.desc}</span><span class="text-[8px] text-zinc-500 uppercase tracking-widest">${s.type}</span></div></div><div class="text-[10px] font-black text-primary/80 bg-primary/5 px-3 py-1 rounded border border-primary/10">${typeL}</div><input type="hidden" data-key="trigger" value="${s.trigger}"><input type="hidden" data-key="type" value="${s.type}"><input type="hidden" data-key="desc" value="${s.desc}"><div class="hidden" id="fields-${id}"></div></div>`;
-            const tempDiv = document.createElement('div'); tempDiv.innerHTML = h;
-            const ex = document.getElementById(`sc-${id}`);
-            if (ex) container.replaceChild(tempDiv.firstElementChild, ex); else container.insertAdjacentElement('beforeend', tempDiv.firstElementChild);
-            const f = document.getElementById(`fields-${id}`);
-            if (s.type === 'venda') f.innerHTML = `<input type="hidden" data-key="value" value="${s.value}">`;
-            else f.innerHTML = `<input type="hidden" data-key="funcType" value="${s.funcType}"><input type="hidden" data-key="ssid" value="${s.ssid || ''}"><input type="hidden" data-key="pass" value="${s.pass || ''}"><input type="hidden" data-key="whatsapp" value="${s.whatsapp || ''}">`;
+            const tL = s.type === 'venda' ? `R$ ${parseFloat(s.value || 0).toFixed(2)}` : (s.funcType || 'FUNC').toUpperCase();
+            const h = `<div class="shortcut-item-row" onclick="editShort('${id}', '${btoa(encodeURIComponent(JSON.stringify(s)))}')"><span class="text-primary font-black text-[10px]">${s.trigger} | ${s.desc}</span><i data-lucide="edit-3" size="10"></i><input type="hidden" data-key="trigger" value="${s.trigger}"><input type="hidden" data-key="type" value="${s.type}"><input type="hidden" data-key="desc" value="${s.desc}"><div class="hidden" id="fields-${id}"></div></div>`;
+            const tD = document.createElement('div'); tD.innerHTML = h; container.appendChild(tD.firstElementChild);
+            const f = document.getElementById(`fields-${id}`); if(s.type === 'venda') f.innerHTML = `<input type="hidden" data-key="value" value="${s.value}">`; else f.innerHTML = `<input type="hidden" data-key="funcType" value="${s.funcType}"><input type="hidden" data-key="ssid" value="${s.ssid || ''}"><input type="hidden" data-key="pass" value="${s.pass || ''}"><input type="hidden" data-key="whatsapp" value="${s.whatsapp || ''}">`;
         }
         lucide.createIcons();
     }
 
-    window.editShort = (id, b64) => { const s = JSON.parse(decodeURIComponent(atob(b64))); renderShortcutRow(id, { ...s, trigger: s.trigger }, true); };
     window.updateFields = (id, ex = null) => {
-        const c = document.getElementById(`fields-${id}`); const t = document.querySelector(`#sc-${id} [data-key="type"]`).value;
-        if (!c) return; c.innerHTML = "";
-        if (t === 'venda') c.innerHTML = `<input type="number" placeholder="VALOR R$" class="minimal-input" data-key="value" value="${ex?.value || ''}">`;
-        else {
-            c.innerHTML = `<select class="minimal-input text-[10px] mb-2" data-key="funcType" onchange="updateSub('${id}')"><option value="">Escolha...</option><option value="wifi" ${ex?.funcType === 'wifi' ? 'selected' : ''}>Wi-Fi</option><option value="contato" ${ex?.funcType === 'contato' ? 'selected' : ''}>Contacto</option><option value="config" ${ex?.funcType === 'config' ? 'selected' : ''}>Ajustes</option><option value="caixa" ${ex?.funcType === 'caixa' ? 'selected' : ''}>Caixa</option></select><div id="sub-${id}" class="space-y-2"></div>`;
-            updateSub(id, ex);
-        }
+        const c = document.getElementById(`fields-${id}`); const t = document.querySelector(`#sc-${id} [data-key="type"]`).value; c.innerHTML = "";
+        if (t === 'venda') c.innerHTML = `<input type="number" placeholder="Preço" class="minimal-input text-[8px]" data-key="value" value="${ex?.value || ''}">`;
+        else { c.innerHTML = `<select class="minimal-input text-[8px] mb-1" data-key="funcType" onchange="updateSub('${id}')"><option value="">Função...</option><option value="wifi" ${ex?.funcType === 'wifi' ? 'selected' : ''}>Wi-Fi</option><option value="contato" ${ex?.funcType === 'contato' ? 'selected' : ''}>Contato</option><option value="config" ${ex?.funcType === 'config' ? 'selected' : ''}>Ajustes</option></select><div id="sub-${id}"></div>`; updateSub(id, ex); }
     };
     window.updateSub = (id, ex = null) => {
-        const s = document.getElementById(`sub-${id}`); if (!s) return;
-        const f = document.querySelector(`#sc-${id} [data-key="funcType"]`).value; s.innerHTML = "";
-        if (f === 'wifi') s.innerHTML = `<input type="text" placeholder="SSID" class="minimal-input text-[10px]" data-key="ssid" value="${ex?.ssid || ''}"><input type="text" placeholder="SENHA" class="minimal-input text-[10px]" data-key="pass" value="${ex?.pass || ''}">`;
-        else if (f === 'contato') s.innerHTML = `<input type="text" placeholder="WHATSAPP" class="minimal-input text-[10px]" data-key="whatsapp" value="${ex?.whatsapp || ''}">`;
+        const s = document.getElementById('sub-'+id); if (!s) return; const f = document.querySelector(`#sc-${id} [data-key="funcType"]`).value; s.innerHTML = "";
+        if (f === 'wifi') s.innerHTML = `<input type="text" placeholder="SSID" class="minimal-input text-[8px]" data-key="ssid" value="${ex?.ssid || ''}"><input type="text" placeholder="Pass" class="minimal-input text-[8px]" data-key="pass" value="${ex?.pass || ''}">`;
+        else if (f === 'contato') s.innerHTML = `<input type="text" placeholder="WhatsApp" class="minimal-input text-[8px]" data-key="whatsapp" value="${ex?.whatsapp || ''}">`;
     };
 
-    window.resetApp = () => { 
-        if(unsubscribePayment) unsubscribePayment(); 
-        document.querySelectorAll('.view-overlay').forEach(v => { v.classList.remove('active'); }); 
-        pdvMode = 'COMMAND'; currentDigits = ""; cartTotal = 0; cartItems = []; updateCartUI(); updateDisplay(); 
-    };
-
-    window.toggleSettings = () => {
-        const v = document.getElementById('view-settings');
-        if (!v) return;
-        if(v.classList.contains('active')) v.classList.remove('active');
-        else {
-            const g = (id) => document.getElementById(id);
-            if(g('input-terminal-name')) g('input-terminal-name').value = terminalConfig.terminalName;
-            if(g('input-daily-goal')) g('input-daily-goal').value = terminalConfig.dailyGoal;
-            if(g('input-pix-key')) g('input-pix-key').value = terminalConfig.pixKey;
-            if(g('input-api-key')) g('input-api-key').value = terminalConfig.mpApiKey;
-            if(g('input-whatsapp')) g('input-whatsapp').value = terminalConfig.whatsapp;
-            if(g('input-wifi-ssid')) g('input-wifi-ssid').value = terminalConfig.wifiSSID;
-            if(g('input-wifi-pass')) g('input-wifi-pass').value = terminalConfig.wifiPass;
-            if(g('input-bg')) g('input-bg').value = terminalConfig.bgColor;
-            if(g('input-color')) g('input-color').value = terminalConfig.color;
-            if(g('input-kb-type')) g('input-kb-type').value = terminalConfig.kbType;
-            renderShortsList(); v.classList.add('active');
-        }
-    };
+    window.editShort = (id, b64) => { const s = JSON.parse(decodeURIComponent(atob(b64))); document.getElementById('shortcuts-config-list').innerHTML=""; renderShortcutRow(id, s, true); };
+    window.toggleSettings = () => { const v = document.getElementById('view-settings'); if(v.classList.contains('active')) resetApp(); else { document.getElementById('input-terminal-name').value = terminalConfig.terminalName || ""; document.getElementById('shortcuts-config-list').innerHTML=""; Object.entries(terminalConfig.shortcuts || {}).forEach(([trigger, s]) => renderShortcutRow(Math.random(), {...s, trigger}, false)); v.classList.add('active'); } };
     
     window.saveSettings = async () => {
         const shortcuts = {};
-        document.querySelectorAll('.shortcut-item-config, .shortcut-view-mode').forEach(item => {
+        document.querySelectorAll('#shortcuts-config-list > div').forEach(item => {
             const t = item.querySelector('[data-key="trigger"]')?.value;
-            const type = item.querySelector('[data-key="type"]')?.value;
-            const desc = item.querySelector('[data-key="desc"]')?.value;
             if (t) {
-                const s = { type, desc };
-                if (type === 'venda') s.value = parseFloat(item.querySelector('[data-key="value"]')?.value || 0);
-                else {
-                    s.funcType = item.querySelector('[data-key="funcType"]')?.value;
-                    s.ssid = item.querySelector('[data-key="ssid"]')?.value;
-                    s.pass = item.querySelector('[data-key="pass"]')?.value;
-                    s.whatsapp = item.querySelector('[data-key="whatsapp"]')?.value;
+                const s = { 
+                    type: item.querySelector('[data-key="type"]')?.value || "venda", 
+                    desc: item.querySelector('[data-key="desc"]')?.value || "" 
+                };
+                if (s.type === 'venda') {
+                    s.value = item.querySelector('[data-key="value"]')?.value || "0";
+                } else { 
+                    s.funcType = item.querySelector('[data-key="funcType"]')?.value || ""; 
+                    s.ssid = item.querySelector('[data-key="ssid"]')?.value || ""; 
+                    s.pass = item.querySelector('[data-key="pass"]')?.value || ""; 
+                    s.whatsapp = item.querySelector('[data-key="whatsapp"]')?.value || ""; 
                 }
                 shortcuts[t] = s;
             }
         });
-        const gV = (id) => document.getElementById(id)?.value || "";
-        const cfg = { ...terminalConfig, terminalName: gV('input-terminal-name'), dailyGoal: parseFloat(gV('input-daily-goal')) || 0, pixKey: gV('input-pix-key'), mpApiKey: gV('input-api-key'), whatsapp: gV('input-whatsapp'), wifiSSID: gV('input-wifi-ssid'), wifiPass: gV('input-wifi-pass'), color: gV('input-color'), bgColor: gV('input-bg'), kbType: gV('input-kb-type'), shortcuts: shortcuts };
-        if (db && auth.currentUser) { await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), cfg); resetApp(); showMessage("Sincronizado!"); }
+        await set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main`), { ...terminalConfig, terminalName: document.getElementById('input-terminal-name').value, pixKey: document.getElementById('input-pix-key').value, kbType: document.getElementById('input-kb-type').value, shortcuts });
+        resetApp();
     };
 
-    function renderShortsList() {
-        const list = document.getElementById('shortcuts-config-list'); list.innerHTML = "";
-        Object.entries(terminalConfig.shortcuts || {}).forEach(([trigger, s]) => { renderShortcutRow(Math.random().toString(36).substr(2, 9), { ...s, trigger }, false); });
-        lucide.createIcons();
-    }
-
-    function updateUIFromConfig() { document.getElementById('terminal-name-label').textContent = terminalConfig.terminalName || "OFFLINE"; const keypad = document.getElementById('virtual-keypad'); if (keypad) keypad.style.display = (terminalConfig.kbType === 'fisico') ? 'none' : 'grid'; }
+    function previewTheme() { document.documentElement.style.setProperty('--primary-color', document.getElementById('input-color').value); document.documentElement.style.setProperty('--bg-color', document.getElementById('input-bg').value); }
+    function applyThemeSettings() { document.documentElement.style.setProperty('--primary-color', terminalConfig.color || '#10b981'); document.documentElement.style.setProperty('--bg-color', terminalConfig.bgColor || '#18181b'); }
+    function updateUIFromConfig() { document.getElementById('terminal-name-label').textContent = terminalConfig.terminalName; document.getElementById('container-teclado-virtual').style.display = (terminalConfig.kbType === 'fisico') ? 'none' : 'block'; }
     function showMessage(t) { const b = document.getElementById('message-box'); document.getElementById('message-text').textContent = t; b.style.opacity = "1"; setTimeout(() => b.style.opacity = "0", 2500); }
-    
-    function showWifi(ssid, pass) { const v = document.getElementById('view-wifi'); if(v) v.classList.add('active'); document.getElementById('wifi-ssid-val').textContent = ssid; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${ssid};P:${pass};;`, width: 350, height: 350 }); }
-    function showSupport(num) { const v = document.getElementById('view-support'); if(v) v.classList.add('active'); document.getElementById('whatsapp-num-val').textContent = num; document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${num}`, width: 350, height: 350 }); }
+    function showWifi(ssid, pass) { document.getElementById('view-wifi').classList.add('active'); document.getElementById('wifi-ssid-val').textContent = ssid; document.getElementById('wifi-qr-box').innerHTML=""; new QRCode(document.getElementById('wifi-qr-box'), { text: `WIFI:S:${ssid};P:${pass};;`, width: 450, height: 450 }); }
+    function showSupport(num) { document.getElementById('view-support').classList.add('active'); document.getElementById('whatsapp-num-val').textContent = num; document.getElementById('whatsapp-qr').innerHTML=""; new QRCode(document.getElementById('whatsapp-qr'), { text: `https://wa.me/${num}`, width: 450, height: 450 }); }
 
-    function renderSales() {
-        const list = document.getElementById('sales-list'), ranking = document.getElementById('ranking-list');
-        if(!list) return; list.innerHTML = ""; ranking.innerHTML = "";
-        let t = 0; let counts = {};
-        salesData.forEach(s => { 
-            if(new Date(s.timestamp).getTime() > terminalConfig.lastClosed) { 
-                t += s.amount; 
-                list.innerHTML += `<div class="bg-white/5 p-4 rounded-2xl flex justify-between"><div><p class="text-[8px] text-zinc-500 uppercase">${new Date(s.timestamp).toLocaleTimeString()}</p><p class="text-[10px] text-white font-medium truncate">${(s.items || []).map(i => i.desc).join(', ')}</p></div><span class="text-white font-bold">R$ ${s.amount.toFixed(2)}</span></div>`; 
-                (s.items || []).forEach(item => { counts[item.desc] = (counts[item.desc] || 0) + 1; });
-            } 
-        });
-        Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0,3).forEach(([name, count]) => {
-            ranking.innerHTML += `<div class="flex justify-between items-center bg-primary/5 p-3 rounded-xl border border-primary/10"><span class="text-[10px] font-bold text-white uppercase">${name}</span><span class="text-[10px] font-black text-primary">${count} un</span></div>`;
-        });
-        document.getElementById('closing-total').textContent = t.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-        const perc = Math.min(100, Math.round((t / (terminalConfig.dailyGoal || 1)) * 100)); document.getElementById('closing-progress-bar').style.width = perc + "%"; document.getElementById('closing-progress-text').textContent = perc + "%";
-    }
+    setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR'); }, 1000);
+    window.addEventListener('load', () => { lucide.createIcons(); initFirebase(); initBatteryMonitor(); });
+    window.copyPixCode = () => { const e = document.createElement('textarea'); e.value = lastPixString; document.body.appendChild(e); e.select(); document.execCommand('copy'); document.body.removeChild(e); showMessage("Copiado!"); };
 
-    window.closeShift = () => { set(ref(db, `artifacts/${safeAppId}/public/data/terminal_settings/main/lastClosed`), Date.now()); resetApp(); showMessage("Turno Zerado"); };
-    window.toggleFullscreen = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); };
-
-    window.addEventListener('load', () => { lucide.createIcons(); initFirebase(); });
-
+    // TECLADO FÍSICO
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-        const vMain = document.querySelectorAll('.view-overlay.active').length === 0;
+        const vM = document.querySelectorAll('.view-overlay.active').length === 0;
+        
         if (e.key === 'Escape') resetApp();
-        if (e.key === 'Enter' && vMain) handleAction();
-        if (e.key === 'Backspace' && vMain) pressKey('back');
-        if (e.key === '*') { pressKey('*'); return; }
-        if (e.key >= '0' && e.key <= '9' && vMain) pressKey(e.key);
-    });
+        if (!vM) return; // Se houver modal ativo, ignora as outras teclas exceto Escape
 
-    setInterval(() => { const d = new Date(); document.getElementById('clock').textContent = d.toLocaleTimeString('pt-BR'); }, 1000);
+        if (e.key === 'Enter') pressKey('enter');
+        else if (e.key === 'Backspace') pressKey('back');
+        else if (e.key === '*' || e.key === 'x' || e.key === 'X') pressKey('*');
+        else if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+    });
 </script>
 </body>
 </html>
