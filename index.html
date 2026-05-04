@@ -414,6 +414,12 @@
 
     setInterval(() => { const d = new Date(); document.getElementById('clock').textContent = d.toLocaleTimeString('pt-BR'); }, 1000);
     window.addEventListener('load', () => { lucide.createIcons(); initFirebase(); });
+    document.body.onclick = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+};
+
 </script>
 </body>
 </html>
